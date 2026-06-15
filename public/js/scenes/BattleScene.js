@@ -387,6 +387,15 @@ class BattleScene extends Phaser.Scene {
           this.uiLayer.add(frozenT);
         }
 
+        if (mob.taunt) {
+          const tT = this.add.text(x + 24, cy - 28, '🛡', { fontSize: '12px' }).setOrigin(0.5);
+          this.uiLayer.add(tT);
+        }
+        if (mob.pierce) {
+          const pT = this.add.text(x + 24, cy - 28, '↯', { fontSize: '12px', color: '#ffff44' }).setOrigin(0.5);
+          this.uiLayer.add(pT);
+        }
+
         // プレイヤーフィールドのみ攻撃選択可能（攻撃済み・凍結は除外）
         if (who === 'player' && this.state.turn === 'player' && !mob.frozen && !mob.attacked) {
           card.setInteractive({ useHandCursor: true });
@@ -417,13 +426,18 @@ class BattleScene extends Phaser.Scene {
       }
     }
 
-    // 敵フィールドが空で攻撃源あり → 直接攻撃
-    if (who === 'enemy' && this.attackSource !== null && field.filter(Boolean).length === 0) {
-      const directZone = this.add.rectangle(cx, cy, 340, cardH + 10, 0xff000022, 0.3)
-        .setStrokeStyle(2, 0xff4444)
-        .setInteractive({ useHandCursor: true });
-      directZone.on('pointerdown', () => this.attackTarget('direct', -1));
-      this.uiLayer.add(directZone);
+    // 敵フィールドが空で攻撃源あり → 直接攻撃（pierce持ちは挑発があっても可）
+    if (who === 'enemy' && this.attackSource !== null) {
+      const attackerMob = this.state.player.field[this.attackSource];
+      const hasTaunt = field.some(m => m && m.taunt);
+      const canDirect = field.filter(Boolean).length === 0 || (attackerMob && attackerMob.pierce);
+      if (canDirect && (!hasTaunt || (attackerMob && attackerMob.pierce))) {
+        const directZone = this.add.rectangle(cx, cy, 340, cardH + 10, 0xff000022, 0.3)
+          .setStrokeStyle(2, 0xff4444)
+          .setInteractive({ useHandCursor: true });
+        directZone.on('pointerdown', () => this.attackTarget('direct', -1));
+        this.uiLayer.add(directZone);
+      }
     }
   }
 
@@ -646,7 +660,9 @@ class BattleScene extends Phaser.Scene {
     // 召喚アニメーション → 完了後にフィールドへ配置
     SE.playSE('summon');
     this.playSummonAnim(from.x, from.y, to.x, to.y, sprKey, () => {
-      s.player.field[slotIndex] = { card: cardData, hp: cardData.hp, frozen: false, attacked: false };
+      const hasTaunt = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(cardData.id);
+      const hasPierce = ['noppera','ittan'].includes(cardData.id);
+      s.player.field[slotIndex] = { card: cardData, hp: cardData.hp, frozen: false, attacked: false, taunt: hasTaunt, pierce: hasPierce, resurrected: false };
       this.applyBattlecry(cardData, 'player');
       this.message = `${cardData.name} を召喚！`;
       this.render();
@@ -667,6 +683,26 @@ class BattleScene extends Phaser.Scene {
     const sprKey = CARD_SPRITE[attacker.card.id];
     this.attackSource = null;
 
+    // 挑発チェック
+    const hasTauntCard = s.enemy.field.some(m => m && m.taunt);
+    if (!attacker.pierce && hasTauntCard) {
+      if (targetType === 'direct') {
+        this.busy = false;
+        this.message = '🛡 挑発カードを先に倒してください！';
+        this.render();
+        this.time.delayedCall(1200, () => { this.message = null; this.render(); });
+        return;
+      }
+      const defender = s.enemy.field[targetIndex];
+      if (defender && !defender.taunt) {
+        this.busy = false;
+        this.message = '🛡 挑発カードを先に倒してください！';
+        this.render();
+        this.time.delayedCall(1200, () => { this.message = null; this.render(); });
+        return;
+      }
+    }
+
     if (targetType === 'direct') {
       const to = { x: this.W / 2, y: this.H * 0.20 };
 
@@ -674,13 +710,15 @@ class BattleScene extends Phaser.Scene {
         () => {
           // 命中時
           SE.playSE('attack');
-          const dmg = attacker.card.atk + (attacker.card.id === 'kyubi' ? 1 : 0);
+          const dmg = attacker.card.atk;
           s.enemy.souls = Math.max(0, s.enemy.souls - dmg);
           this.playDamageFlash(this.W / 2, this.H * 0.15, dmg);
           SE.playSE('damage');
           this.message = `${attacker.card.name} が直接攻撃！ -${dmg}魂`;
           // 攻撃済みフラグ
           if (s.player.field[srcIdx]) s.player.field[srcIdx].attacked = true;
+          // 攻撃時効果
+          this.applyOnAttack(attacker.card, 'player', 'direct', false);
         },
         () => {
           this.render();
@@ -714,18 +752,22 @@ class BattleScene extends Phaser.Scene {
           // 攻撃済みフラグ
           if (s.player.field[srcIdx]) s.player.field[srcIdx].attacked = true;
 
+          let killedEnemy = false;
           if (defender.hp <= 0) {
             SE.playSE('death');
             this.playDeathAnim(to.x, to.y);
-            this.applyDeathrattle(defender.card, 'enemy');
-            s.enemy.field[targetIndex] = null;
+            this.killMob('enemy', targetIndex);
             this.message += ` → ${defender.card.name} 撃破！`;
+            killedEnemy = true;
           }
           if (attacker.hp <= 0) {
             SE.playSE('death');
             this.playDeathAnim(from.x, from.y);
-            this.applyDeathrattle(attacker.card, 'player');
-            s.player.field[srcIdx] = null;
+            this.killMob('player', srcIdx);
+          }
+          // 攻撃時効果
+          if (s.player.field[srcIdx]) {
+            this.applyOnAttack(attacker.card, 'player', 'field', killedEnemy, targetIndex);
           }
         },
         () => {
@@ -745,46 +787,50 @@ class BattleScene extends Phaser.Scene {
     const opp = who === 'player' ? 'enemy' : 'player';
 
     switch (card.id) {
-      // ===== 既存カード =====
-      case 'zashiki':
-      case 'amefuri':
-        s[who].souls = Math.min(8, s[who].souls + 1);
-        break;
       case 'kappa':
       case 'tsuchigumo':
         this.drawCard(who);
         break;
-      case 'tengu':
-      case 'oni':
-      case 'wanyudo':
-        s[opp].field.forEach((mob, i) => {
-          if (mob) { mob.hp -= 1; if (mob.hp <= 0) { this.applyDeathrattle(mob.card, opp); s[opp].field[i] = null; } }
+      case 'zashiki':
+        s[who].souls = Math.min(8, s[who].souls + 2);
+        break;
+      case 'amefuri':
+        s[who].field.forEach(mob => {
+          if (mob) mob.hp = Math.min(mob.card.hp, mob.hp + 1);
         });
         break;
-      case 'tanuki':
-      case 'sunakake': {
+      case 'tanuki': {
         const t = s[opp].field.find(Boolean);
-        if (t) t.card = { ...t.card, atk: Math.max(0, t.card.atk - 1) };
+        if (t) t.card = { ...t.card, atk: Math.max(0, t.card.atk - 2) };
         break;
       }
+      case 'sunakake':
+        s[opp].field.forEach(mob => {
+          if (mob) mob.card = { ...mob.card, atk: Math.max(0, mob.card.atk - 1) };
+        });
+        break;
       case 'kitsune':
       case 'ittan':
         s[opp].souls = Math.max(0, s[opp].souls - 1);
         break;
-      case 'yuki_onna':
-      case 'kasha': {
+      case 'oni':
+      case 'wanyudo':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 1; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'yuki_onna': {
         const f = s[opp].field.find(Boolean);
         if (f) f.frozen = true;
         break;
       }
-      case 'nue':
       case 'noppera':
+      case 'nue':
         if (s[opp].hand.length > 0) {
           const ri = Math.floor(Math.random() * s[opp].hand.length);
           s[opp].hand.splice(ri, 1);
         }
         break;
-      // ===== 新規カード =====
       case 'yamanba':
         s[opp].souls = Math.max(0, s[opp].souls - 2);
         break;
@@ -793,14 +839,24 @@ class BattleScene extends Phaser.Scene {
           if (mob) mob.card = { ...mob.card, atk: Math.max(0, mob.card.atk - 1) };
         });
         break;
+      case 'kasha': {
+        const t = s[opp].field.find(Boolean);
+        if (t) { t.hp -= 3; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+        break;
+      }
       case 'bakekujira':
         s[opp].field.forEach((mob, i) => {
-          if (mob) { mob.hp -= 2; if (mob.hp <= 0) { this.applyDeathrattle(mob.card, opp); s[opp].field[i] = null; } }
+          if (mob) { mob.hp -= 2; if (mob.hp <= 0) this.killMob(opp, i); }
         });
         break;
       case 'dai_tengu':
         this.drawCard(who);
         this.drawCard(who);
+        s[who].field.forEach(mob => {
+          if (mob && (mob.card.id === 'tengu' || mob.card.id === 'dai_tengu')) {
+            mob.card = { ...mob.card, atk: mob.card.atk + 2 };
+          }
+        });
         break;
       case 'shuten_doji':
         for (let d = 0; d < 2; d++) {
@@ -810,20 +866,31 @@ class BattleScene extends Phaser.Scene {
           }
         }
         break;
+      case 'tamamo': {
+        let strongest = null;
+        s[opp].field.forEach(mob => {
+          if (mob && (!strongest || mob.card.atk > strongest.card.atk)) strongest = mob;
+        });
+        if (strongest) strongest.card = { ...strongest.card, atk: 0 };
+        break;
+      }
       case 'ryujin':
         s[opp].field.forEach((mob, i) => {
-          if (mob) { this.applyDeathrattle(mob.card, opp); s[opp].field[i] = null; }
+          if (mob) this.killMob(opp, i);
         });
         break;
       case 'susanoo':
         ['player', 'enemy'].forEach(side => {
-          const sideOpp = side === 'player' ? 'enemy' : 'player';
           s[side].field.forEach((mob, i) => {
             if (mob) {
-              mob.hp -= 3;
-              if (mob.hp <= 0) { this.applyDeathrattle(mob.card, sideOpp); s[side].field[i] = null; }
+              mob.hp -= 4;
+              if (mob.hp <= 0) this.killMob(side, i);
             }
           });
+        });
+        // 生存自軍HP全回復
+        s[who].field.forEach(mob => {
+          if (mob) mob.hp = mob.card.hp;
         });
         break;
     }
@@ -840,7 +907,116 @@ class BattleScene extends Phaser.Scene {
       case 'tamamo':
         s[opp].souls = Math.max(0, s[opp].souls - 3);
         break;
+      case 'karakasa':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 1; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'oni':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 2; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'amanojaku':
+        s[opp].field.forEach(mob => {
+          if (mob) mob.card = { ...mob.card, atk: Math.max(0, mob.card.atk - 2) };
+        });
+        break;
+      case 'bakekujira':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 3; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'ryujin':
+        s[opp].souls = Math.max(0, s[opp].souls - 4);
+        break;
     }
+  }
+
+  killMob(who, index) {
+    const s = this.state;
+    const mob = s[who].field[index];
+    if (!mob || mob.hp > 0) return;
+    if (mob.card.id === 'nekomata' && !mob.resurrected) {
+      mob.hp = 1;
+      mob.resurrected = true;
+      return;
+    }
+    this.applyDeathrattle(mob.card, who);
+    s[who].field[index] = null;
+  }
+
+  applyOnAttack(card, who, targetType, killedEnemy, targetIndex = -1) {
+    const s = this.state;
+    const opp = who === 'player' ? 'enemy' : 'player';
+    switch (card.id) {
+      case 'tengu':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 1; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'kitsune':
+      case 'wanyudo':
+        s[opp].souls = Math.max(0, s[opp].souls - 1);
+        break;
+      case 'yuki_onna':
+        if (targetType === 'field') {
+          const target = targetIndex >= 0 ? s[opp].field[targetIndex] : s[opp].field.find(Boolean);
+          if (target) target.frozen = true;
+        }
+        break;
+      case 'yamanba':
+        if (killedEnemy) {
+          const mob = s[who].field.find(m => m && m.card.id === 'yamanba');
+          if (mob) mob.card = { ...mob.card, atk: mob.card.atk + 1 };
+        }
+        break;
+      case 'kyubi':
+        s[opp].souls = Math.max(0, s[opp].souls - 1);
+        break;
+    }
+  }
+
+  applyStartOfTurn(who) {
+    const s = this.state;
+    const opp = who === 'player' ? 'enemy' : 'player';
+    s[who].field.forEach(mob => {
+      if (!mob) return;
+      switch (mob.card.id) {
+        case 'kappa':
+          s[who].souls = Math.min(8, s[who].souls + 1);
+          break;
+        case 'rokurokubi':
+          s[opp].souls = Math.max(0, s[opp].souls - 1);
+          break;
+        case 'chochin': {
+          const allies = s[who].field.filter(m => m);
+          if (allies.length > 0) {
+            const ri = Math.floor(Math.random() * allies.length);
+            allies[ri].hp = Math.min(allies[ri].card.hp, allies[ri].hp + 1);
+          }
+          break;
+        }
+        case 'umibouzu':
+          s[opp].field.forEach((m, i) => {
+            if (m) { m.hp -= 1; if (m.hp <= 0) this.killMob(opp, i); }
+          });
+          break;
+        case 'nue': {
+          const roll = Math.floor(Math.random() * 3);
+          if (roll === 0) this.drawCard(who);
+          else if (roll === 1) s[who].souls = Math.min(8, s[who].souls + 1);
+          else s[opp].souls = Math.max(0, s[opp].souls - 1);
+          break;
+        }
+        case 'kyubi':
+          s[opp].souls = Math.max(0, s[opp].souls - 1);
+          break;
+        case 'shuten_doji':
+          mob.card = { ...mob.card, atk: mob.card.atk + 1 };
+          break;
+      }
+    });
   }
 
   // ===== ターン管理 =====
@@ -865,10 +1041,12 @@ class BattleScene extends Phaser.Scene {
     s.energy.current = Math.min(s.energy.max, s.energy.current + 1);
     s.energy.max     = Math.min(10, s.energy.max + 1);
 
+    // 敵ターン開始時効果
+    this.applyStartOfTurn('enemy');
+
     this.drawCard('enemy');
 
     // 敵AI：出せるカードを出す
-    let acted = false;
     s.enemy.hand.forEach((card, hi) => {
       if (s.energy.current < card.cost) return;
       const slot = s.enemy.field.indexOf(null);
@@ -876,35 +1054,38 @@ class BattleScene extends Phaser.Scene {
 
       s.energy.current -= card.cost;
       s.enemy.hand.splice(hi, 1);
-      s.enemy.field[slot] = { card, hp: card.hp, frozen: false };
+      const hasTaunt = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(card.id);
+      const hasPierce = ['noppera','ittan'].includes(card.id);
+      s.enemy.field[slot] = { card, hp: card.hp, frozen: false, attacked: false, taunt: hasTaunt, pierce: hasPierce, resurrected: false };
       this.applyBattlecry(card, 'enemy');
-      acted = true;
     });
 
     // 敵AI：フィールドの妖怪で攻撃
-    s.enemy.field.forEach((mob) => {
+    s.enemy.field.forEach((mob, mIdx) => {
       if (!mob || mob.frozen) return;
-      const playerMobs = s.player.field.filter(Boolean);
 
-      if (playerMobs.length > 0) {
-        // ランダムに攻撃
-        const ri = Math.floor(Math.random() * playerMobs.length);
-        const defIdx = s.player.field.indexOf(playerMobs[ri]);
+      // 挑発チェック：プレイヤーフィールドに挑発カードがあれば優先（pierceは無視）
+      const tauntMobs = s.player.field.filter(m => m && m.taunt);
+      const candidateMobs = (!mob.pierce && tauntMobs.length > 0) ? tauntMobs : s.player.field.filter(Boolean);
+
+      if (candidateMobs.length > 0) {
+        const ri = Math.floor(Math.random() * candidateMobs.length);
+        const defIdx = s.player.field.indexOf(candidateMobs[ri]);
         const def = s.player.field[defIdx];
 
         mob.hp  -= def.card.atk;
         def.hp  -= mob.card.atk;
 
-        if (def.hp <= 0) { this.applyDeathrattle(def.card, 'player'); s.player.field[defIdx] = null; }
-        if (mob.hp <= 0) {
-          this.applyDeathrattle(mob.card, 'enemy');
-          const mIdx = s.enemy.field.indexOf(mob);
-          s.enemy.field[mIdx] = null;
-        }
+        // 攻撃時効果（敵）
+        this.applyOnAttack(mob.card, 'enemy', 'field', def.hp <= 0, defIdx);
+
+        const defKilled = def.hp <= 0;
+        if (defKilled) this.killMob('player', defIdx);
+        if (mob.hp <= 0) this.killMob('enemy', mIdx);
       } else {
         // 直接攻撃
         s.player.souls = Math.max(0, s.player.souls - mob.card.atk);
-        if (mob.card.id === 'kyubi') s.player.souls = Math.max(0, s.player.souls - 1);
+        this.applyOnAttack(mob.card, 'enemy', 'direct', false);
       }
     });
 
@@ -917,6 +1098,9 @@ class BattleScene extends Phaser.Scene {
     s.energy.current = s.energy.max;
     this.drawCard('player');
     s.turn = 'player';
+
+    // プレイヤーターン開始時効果
+    this.applyStartOfTurn('player');
 
     this.message = 'あなたのターン！';
     this.render();
