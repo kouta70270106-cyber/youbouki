@@ -1037,28 +1037,31 @@ class BattleScene extends Phaser.Scene {
   enemyTurn() {
     const s = this.state;
 
-    // エネルギー補充（敵も同じルール）
-    s.energy.current = Math.min(s.energy.max, s.energy.current + 1);
+    // エネルギー補充（敵はプレイヤーと同じく上限まで全回復）
     s.energy.max     = Math.min(10, s.energy.max + 1);
+    s.energy.current = s.energy.max;
 
     // 敵ターン開始時効果
     this.applyStartOfTurn('enemy');
 
     this.drawCard('enemy');
 
-    // 敵AI：出せるカードを出す
-    s.enemy.hand.forEach((card, hi) => {
-      if (s.energy.current < card.cost) return;
+    // 敵AI：出せるカードを高コスト優先で可能な限り召喚
+    // forEach+splice はインデックスがずれてスキップが起きるため、コピー配列でループ
+    const handSnapshot = [...s.enemy.hand];
+    for (const card of handSnapshot) {
+      if (s.energy.current < card.cost) continue;
       const slot = s.enemy.field.indexOf(null);
-      if (slot === -1) return;
-
+      if (slot === -1) break;
+      const idx = s.enemy.hand.indexOf(card);
+      if (idx === -1) continue;
       s.energy.current -= card.cost;
-      s.enemy.hand.splice(hi, 1);
-      const hasTaunt = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(card.id);
+      s.enemy.hand.splice(idx, 1);
+      const hasTaunt  = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(card.id);
       const hasPierce = ['noppera','ittan'].includes(card.id);
       s.enemy.field[slot] = { card, hp: card.hp, frozen: false, attacked: false, taunt: hasTaunt, pierce: hasPierce, resurrected: false };
       this.applyBattlecry(card, 'enemy');
-    });
+    }
 
     // 敵AI：フィールドの妖怪で攻撃
     s.enemy.field.forEach((mob, mIdx) => {
