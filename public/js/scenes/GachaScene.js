@@ -51,6 +51,18 @@ class GachaScene extends Phaser.Scene {
       SE.playSE('click');
       this.scene.start('HomeScene');
     });
+
+    // DEVボタン（localhost のみ表示）
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      const devBtn = this.add.text(W - 8, 8, '[DEV]', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#554466',
+      }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+      devBtn.on('pointerdown', () => {
+        GameState.player.jureikon += 20;
+        GameState.save();
+        if (this._jureikonText) this._jureikonText.setText(`🔮 ${GameState.player.jureikon}`);
+      });
+    }
   }
 
   _drawJureikonPanel() {
