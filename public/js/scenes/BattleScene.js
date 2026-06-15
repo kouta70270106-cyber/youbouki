@@ -28,14 +28,14 @@ class BattleScene extends Phaser.Scene {
         souls: 8,
         hand:  [],
         deck:  this.buildDeck(this._getPlayerDeckIds()),
-        field: [],   // フィールド上の妖怪 [{card, hp, frozen}]
+        field: [null, null, null, null, null],
       },
       enemy: {
         name:  this.battleData.enemy,
         souls: this.battleData.souls,
         hand:  [],
         deck:  this.buildDeck(this.battleData.deckIds),
-        field: [],
+        field: [null, null, null, null, null],
       },
     };
 
