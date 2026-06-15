@@ -81,8 +81,8 @@ class DeckScene extends Phaser.Scene {
 
   _updateCountText() {
     const n = this._deck.length;
-    const color = n === 44 ? '#44ff88' : n > 44 ? '#ff4444' : '#b89adc';
-    this._countText.setText(`デッキ: ${n} / 44 枚`).setColor(color);
+    const color = n === 30 ? '#44ff88' : n > 30 ? '#ff4444' : '#b89adc';
+    this._countText.setText(`デッキ: ${n} / 30 枚`).setColor(color);
   }
 
   _renderList() {
@@ -170,7 +170,7 @@ class DeckScene extends Phaser.Scene {
     }).setOrigin(0.5));
 
     // ===== + ボタン =====
-    const canAdd = count < 3 && this._deck.length < 44;
+    const canAdd = count < 3 && this._deck.length < 30;
     const plusBg = t(this.add.circle(410, y, 18, canAdd ? 0x0a3a1a : 0x111111));
     t(this.add.text(410, y, '+', {
       fontFamily: 'monospace', fontSize: '20px',
