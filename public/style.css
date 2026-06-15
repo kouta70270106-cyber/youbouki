@@ -1,0 +1,82 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #050210;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: serif;
+}
+
+#game-container canvas {
+  display: block;
+  border: 1px solid #2a1040;
+  box-shadow: 0 0 40px #6633aa44;
+}
+
+/* 名前入力モーダル */
+#name-modal {
+  position: fixed;
+  inset: 0;
+  background: #000000cc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#name-modal.hidden { display: none; }
+
+#name-modal .modal-box {
+  background: #1a0a30;
+  border: 1px solid #6633aa;
+  border-radius: 8px;
+  padding: 40px 32px;
+  text-align: center;
+  width: 320px;
+  box-shadow: 0 0 30px #8844cc66;
+}
+
+#name-modal h2 {
+  color: #e8c87a;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+#name-modal p {
+  color: #b89adc;
+  font-size: 13px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+#name-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0a0520;
+  border: 1px solid #6633aa;
+  border-radius: 4px;
+  color: #e8c87a;
+  font-size: 18px;
+  font-family: serif;
+  text-align: center;
+  outline: none;
+  margin-bottom: 20px;
+}
+
+#name-input::placeholder { color: #443366; }
+
+#name-submit {
+  background: #3d1a5e;
+  border: 1px solid #8855cc;
+  color: #e8c87a;
+  font-family: serif;
+  font-size: 16px;
+  padding: 10px 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#name-submit:hover { background: #5a2a88; }
