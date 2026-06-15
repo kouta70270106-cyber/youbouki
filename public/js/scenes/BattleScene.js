@@ -1043,11 +1043,9 @@ class BattleScene extends Phaser.Scene {
 
     // 敵ターン開始時効果
     this.applyStartOfTurn('enemy');
-
     this.drawCard('enemy');
 
-    // 敵AI：出せるカードを高コスト優先で可能な限り召喚
-    // forEach+splice はインデックスがずれてスキップが起きるため、コピー配列でループ
+    // ===== フェーズ1：召喚 =====
     const handSnapshot = [...s.enemy.hand];
     for (const card of handSnapshot) {
       if (s.energy.current < card.cost) continue;
@@ -1063,55 +1061,55 @@ class BattleScene extends Phaser.Scene {
       this.applyBattlecry(card, 'enemy');
     }
 
-    // 敵AI：フィールドの妖怪で攻撃
-    s.enemy.field.forEach((mob, mIdx) => {
-      if (!mob || mob.frozen) return;
+    // 召喚結果を描画してから攻撃フェーズへ
+    this.message = '敵が妖怪を召喚！';
+    this.render();
 
-      // 挑発チェック：プレイヤーフィールドに挑発カードがあれば優先（pierceは無視）
-      const tauntMobs = s.player.field.filter(m => m && m.taunt);
-      const candidateMobs = (!mob.pierce && tauntMobs.length > 0) ? tauntMobs : s.player.field.filter(Boolean);
+    // ===== フェーズ2：攻撃（500ms後） =====
+    this.time.delayedCall(800, () => {
 
-      if (candidateMobs.length > 0) {
-        const ri = Math.floor(Math.random() * candidateMobs.length);
-        const defIdx = s.player.field.indexOf(candidateMobs[ri]);
-        const def = s.player.field[defIdx];
+      s.enemy.field.forEach((mob, mIdx) => {
+        if (!mob || mob.frozen) return;
 
-        mob.hp  -= def.card.atk;
-        def.hp  -= mob.card.atk;
+        const tauntMobs    = s.player.field.filter(m => m && m.taunt);
+        const candidateMobs = (!mob.pierce && tauntMobs.length > 0) ? tauntMobs : s.player.field.filter(Boolean);
 
-        // 攻撃時効果（敵）
-        this.applyOnAttack(mob.card, 'enemy', 'field', def.hp <= 0, defIdx);
+        if (candidateMobs.length > 0) {
+          const ri     = Math.floor(Math.random() * candidateMobs.length);
+          const defIdx = s.player.field.indexOf(candidateMobs[ri]);
+          const def    = s.player.field[defIdx];
 
-        const defKilled = def.hp <= 0;
-        if (defKilled) this.killMob('player', defIdx);
-        if (mob.hp <= 0) this.killMob('enemy', mIdx);
-      } else {
-        // 直接攻撃
-        s.player.souls = Math.max(0, s.player.souls - mob.card.atk);
-        this.applyOnAttack(mob.card, 'enemy', 'direct', false);
+          mob.hp -= def.card.atk;
+          def.hp -= mob.card.atk;
+
+          this.applyOnAttack(mob.card, 'enemy', 'field', def.hp <= 0, defIdx);
+
+          if (def.hp <= 0) this.killMob('player', defIdx);
+          if (mob.hp <= 0) this.killMob('enemy', mIdx);
+        } else {
+          s.player.souls = Math.max(0, s.player.souls - mob.card.atk);
+          this.applyOnAttack(mob.card, 'enemy', 'direct', false);
+        }
+      });
+
+      // 凍結解除・プレイヤーターン準備
+      s.enemy.field.forEach(m => { if (m) m.frozen = false; });
+      s.player.field.forEach(m => { if (m) m.attacked = false; });
+      s.energy.max     = Math.min(10, s.energy.max + 1);
+      s.energy.current = s.energy.max;
+      this.drawCard('player');
+      s.turn = 'player';
+
+      this.applyStartOfTurn('player');
+
+      this.message = 'あなたのターン！';
+      this.render();
+      this.checkWin();
+
+      if (!this.battleEnded) {
+        this.time.delayedCall(800, () => { this.message = null; this.render(); });
       }
     });
-
-    // 凍結解除
-    s.enemy.field.forEach(m => { if (m) m.frozen = false; });
-
-    // プレイヤーターンへ（攻撃済みフラグをリセット）
-    s.player.field.forEach(m => { if (m) m.attacked = false; });
-    s.energy.max     = Math.min(10, s.energy.max + 1);
-    s.energy.current = s.energy.max;
-    this.drawCard('player');
-    s.turn = 'player';
-
-    // プレイヤーターン開始時効果
-    this.applyStartOfTurn('player');
-
-    this.message = 'あなたのターン！';
-    this.render();
-    this.checkWin();
-
-    if (!this.battleEnded) {
-      this.time.delayedCall(800, () => { this.message = null; this.render(); });
-    }
   }
 
   checkWin() {
