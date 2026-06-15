@@ -19,7 +19,7 @@ class HomeScene extends Phaser.Scene {
     const R_W    = 84,  R_X = W - PAD - R_W;    // right col: x=382, w=84,  cx=424
     const C_X    = L_X + L_W + 11;              // center col: x=109
     const C_W    = R_X - C_X - 11;              // center col: w=262
-    const PANEL_H = Math.floor((CON_H - 4) / 2);
+    const PANEL_H = Math.floor((CON_H - 8) / 3);
 
     // ── 背景 ──
     this.add.rectangle(W / 2, H / 2, W, H, 0x080510);
@@ -118,6 +118,13 @@ class HomeScene extends Phaser.Scene {
       L_X, CON_Y + PANEL_H + 4, L_W, PANEL_H,
       '鑑', '#e0b266', '妖怪\n図鑑',
       () => this.scene.start('CollectionScene')
+    );
+    // 呪魂ガチャパネル
+    const jureikon = GameState.player.jureikon || 0;
+    this._makeNavPanel(
+      L_X, CON_Y + (PANEL_H + 4) * 2, L_W, PANEL_H,
+      '魂', '#cc88ff', `ガチャ\n🔮${jureikon}`,
+      () => this.scene.start('GachaScene')
     );
 
     // ── 右カラム（ストーリー） ──

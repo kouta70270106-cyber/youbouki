@@ -108,7 +108,7 @@ const D = {
       id: 1,
       title: '第一章：霧の中の目覚め',
       description: '霧深い森で目を覚ます子ども。何も覚えていない。ただ一枚のカードだけが手の中にあった。',
-      reward: ['noppera','chochin','ittan','oni','oni','yuki_onna','yuki_onna','nekomata'],
+      reward: ['karakasa','karakasa','noppera','noppera'],
       battles: [
         { id: 'c1b1', enemy: '村の番人',     type: 'human',  souls: 4, deckIds: ['kappa','kitsune','kitsune','tanuki','tanuki','karakasa'] },
         { id: 'c1b2', enemy: '迷い河童',     type: 'youkai', souls: 5, deckIds: ['kappa','kappa','tengu','karakasa','karakasa','tanuki'] },
@@ -121,7 +121,7 @@ const D = {
       id: 2,
       title: '第二章：鬼の集落',
       description: '記憶の欠片を追って鬼の集落へ。そこで出会った老鬼が語る、忘れられた名前。',
-      reward: ['rokurokubi','nurikabe','sunakake','amefuri','wanyudo','yamanba','yamanba','umibouzu','amanojaku','kasha','tsuchigumo','bakekujira'],
+      reward: ['tengu','tengu','rokurokubi','rokurokubi'],
       battles: [
         { id: 'c2b1', enemy: '若鬼',           type: 'youkai', souls: 6, deckIds: ['oni','oni','kappa','kappa','tengu','karakasa','karakasa'] },
         { id: 'c2b2', enemy: '妖術師',         type: 'human',  souls: 7, deckIds: ['yuki_onna','yuki_onna','nekomata','kitsune','kitsune','tengu'] },
@@ -134,7 +134,7 @@ const D = {
       id: 3,
       title: '第三章：記憶の回廊',
       description: '鬼の頭領の言葉を手がかりに、記憶の核心へ。その奥底には、想像を超えた真実が待つ。',
-      reward: ['nue','nue','kyubi','kyubi','shuten_doji','tamamo','dai_tengu','dai_tengu','ryujin','susanoo'],
+      reward: ['nurikabe','nurikabe','sunakake','sunakake'],
       battles: [
         { id: 'c3b1', enemy: '記憶の幻影',       type: 'youkai', souls: 6, deckIds: ['kitsune','kitsune','noppera','noppera','rokurokubi','rokurokubi','karakasa','karakasa'] },
         { id: 'c3b2', enemy: '骸の守護者',       type: 'youkai', souls: 7, deckIds: ['wanyudo','wanyudo','kasha','kasha','nurikabe','nurikabe','chochin','ittan'] },
@@ -147,7 +147,7 @@ const D = {
       id: 4,
       title: '第四章：人間の里',
       description: '記憶の欠片を追って人里へ。しかしそこで呼ばれたのは名ではなく——「大蛇の子」という言葉だった。',
-      reward: [],
+      reward: ['chochin','chochin','amefuri','amefuri'],
       battles: [
         { id: 'c4b1', enemy: '里の見張り番', type: 'human', souls: 7,
           preText: '人里に降りてきた主人公。しかし住人たちは恐れをなし、式神を放ってくる。\n\n見張り：「妖怪だ！化け物が来たぞ！逃げろ！」',
@@ -175,7 +175,7 @@ const D = {
       id: 5,
       title: '第五章：追われる者',
       description: '「大蛇の子を生かすな」——陰陽師の追跡は激しさを増す。逃げながら、脳裏に大きな蛇の姿がよぎり始める。',
-      reward: [],
+      reward: ['ittan','ittan','wanyudo','wanyudo'],
       battles: [
         { id: 'c5b1', enemy: '追手の陰陽師', type: 'human', souls: 7,
           preText: '背後から追手の気配。振り返れば陰陽師の一団。\n\n追手：「逃がすな！大蛇の血が残れば、また災いが起きる！」',
@@ -203,7 +203,7 @@ const D = {
       id: 6,
       title: '第六章：流浪の妖怪たち',
       description: 'ぬらりひょんの導きで、居場所をなくした妖怪たちの集落へ。しかし彼らは荒れ果て、近づく者全てに牙をむいていた。',
-      reward: [],
+      reward: ['yuki_onna','yuki_onna','oni','oni'],
       battles: [
         { id: 'c6b1', enemy: '荒れた河童', type: 'youkai', souls: 8,
           preText: 'ぬらりひょん：「あそこの妖怪たちは人間に里を焼かれてね。荒れてしまっているんだ。君ならわかってあげられるだろう？」\n\n河童：「来るな！人間め！またいじめに来たのか！」',
@@ -231,7 +231,7 @@ const D = {
       id: 7,
       title: '第七章：ぬらりひょんの導き',
       description: 'ぬらりひょんに導かれ各地を旅する。記憶は「整理」されていくが——なぜか母の顔だけが思い出せない。',
-      reward: [],
+      reward: ['nekomata','nekomata','yamanba','yamanba'],
       battles: [
         { id: 'c7b1', enemy: '封印の守護者', type: 'youkai', souls: 8,
           preText: 'ぬらりひょん：「ここに君の記憶の欠片が封じられている。守護者を倒せば取り戻せるよ」\n\n守護者：「その先には進ませぬ！」',
@@ -259,7 +259,7 @@ const D = {
       id: 8,
       title: '第八章：母の幻影',
       description: '封印を超えて蘇る記憶——炎に包まれた夜、八つの頭を持つ巨大な蛇が最後の力で何かを守っていた。',
-      reward: [],
+      reward: ['umibouzu','umibouzu','amanojaku','amanojaku'],
       battles: [
         { id: 'c8b1', enemy: '記憶の残滓', type: 'youkai', souls: 8,
           preText: '夢と現実の境界で、記憶が溢れ出す。\n炎——鱗——「逃げなさい」——\n\n記憶の残滓：「忘れろ……全てを忘れろ……」',
@@ -287,7 +287,7 @@ const D = {
       id: 9,
       title: '第九章：真実の欠片',
       description: '古い妖怪が全てを語る——ぬらりひょんの本当の目的と、八岐大蛇の最後の夜。怒りが、力に変わる。',
-      reward: [],
+      reward: ['kasha','kasha','tsuchigumo','tsuchigumo','bakekujira','bakekujira'],
       battles: [
         { id: 'c9b1', enemy: 'ぬらりひょんの手下', type: 'youkai', souls: 9,
           preText: '証人を消しに来たぬらりひょんの手下。\n\n手下：「ぬらりひょん様の秘密を嗅ぎ回る者は消えてもらう！」',

@@ -1140,6 +1140,14 @@ class BattleScene extends Phaser.Scene {
         prog[this.chapterId] = this.battleIndex + 1;
       }
 
+      // 初回バトルクリア → 呪魂+2
+      const battleId = this.battleData.id;
+      const isFirstBattleClear = battleId && !GameState.player.clearedBattles.includes(battleId);
+      if (isFirstBattleClear) {
+        GameState.player.clearedBattles.push(battleId);
+        GameState.player.jureikon += 2;
+      }
+
       // 初回チャプタークリア → カード報酬付与
       const firstClear = isLastBattle && !GameState.player.completedChapters.includes(this.chapterId);
       if (firstClear) {
@@ -1169,12 +1177,20 @@ class BattleScene extends Phaser.Scene {
         }).setOrigin(0.5);
         nextY += 58;
       }
+      if (isFirstBattleClear) {
+        this.add.text(W / 2, nextY, `🔮 呪魂 +2（所持: ${GameState.player.jureikon}）`, {
+          fontSize: '14px', color: '#cc88ff', fontFamily: 'serif',
+          stroke: '#080310', strokeThickness: 3,
+        }).setOrigin(0.5);
+        nextY += 36;
+      }
       if (firstClear && (chapter.reward || []).length > 0) {
-        this.add.text(W / 2, nextY, `✦ 新たな妖怪カード ${chapter.reward.length} 枚を入手！`, {
+        const uniqueReward = [...new Set(chapter.reward)];
+        this.add.text(W / 2, nextY, `✦ 新たな妖怪カード ${uniqueReward.length} 種を入手！`, {
           fontSize: '14px', color: '#44cc88', fontFamily: 'serif',
           stroke: '#080310', strokeThickness: 3,
         }).setOrigin(0.5);
-        nextY += 44;
+        nextY += 36;
       }
 
       if (!isLastBattle) {
