@@ -1,7 +1,7 @@
 // 妖忘記 — バトルシーン
 // ターン制カードバトル。手番は PLAYER → ENEMY の交互。
 class BattleScene extends Phaser.Scene {
-  constructor() { super('BattleScene'); }
+  constructor(key = 'BattleScene') { super(key); }
 
   init(data) {
     this.chapterId   = data.chapterId   || 1;

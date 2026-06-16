@@ -4,7 +4,7 @@ const config = {
   height: 720,
   backgroundColor: '#050210',
   parent: 'game-container',
-  scene: [BootScene, TitleScene, HomeScene, StoryScene, BattleScene, OnlineScene, CollectionScene, DeckScene, GachaScene, EndingScene],
+  scene: [BootScene, TitleScene, HomeScene, StoryScene, BattleScene, OnlineBattleScene, OnlineScene, CollectionScene, DeckScene, GachaScene, EndingScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

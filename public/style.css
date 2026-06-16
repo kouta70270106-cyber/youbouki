@@ -80,3 +80,101 @@ body {
 }
 
 #name-submit:hover { background: #5a2a88; }
+
+/* オンライン対戦モーダル */
+#online-modal {
+  position: fixed;
+  inset: 0;
+  background: #000000cc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#online-modal.hidden { display: none; }
+
+#online-modal .modal-box {
+  background: #1a0a30;
+  border: 1px solid #6633aa;
+  border-radius: 8px;
+  padding: 36px 28px;
+  text-align: center;
+  width: 340px;
+  box-shadow: 0 0 30px #8844cc66;
+}
+
+#online-modal h2 {
+  color: #e8c87a;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+#online-modal p {
+  color: #b89adc;
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+#room-code-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0a0520;
+  border: 1px solid #6633aa;
+  border-radius: 4px;
+  color: #e8c87a;
+  font-size: 20px;
+  font-family: serif;
+  text-align: center;
+  outline: none;
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+}
+
+#room-code-input::placeholder { color: #443366; letter-spacing: 2px; }
+
+.modal-btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#room-create-btn,
+#room-join-btn {
+  background: #3d1a5e;
+  border: 1px solid #8855cc;
+  color: #e8c87a;
+  font-family: serif;
+  font-size: 15px;
+  padding: 9px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#room-create-btn:hover,
+#room-join-btn:hover { background: #5a2a88; }
+
+#room-create-btn:disabled,
+#room-join-btn:disabled { opacity: 0.4; cursor: default; }
+
+#online-status {
+  color: #e8c87a;
+  font-size: 12px;
+  min-height: 20px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+#online-back-btn {
+  background: transparent;
+  border: none;
+  color: #6633aa;
+  font-family: serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#online-back-btn:hover { color: #9966ee; }
