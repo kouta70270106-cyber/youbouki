@@ -1,9 +1,29 @@
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
 
+  preload() {
+    const ALL_IDS = [
+      'kappa','tengu','zashiki','tanuki','kitsune','karakasa',
+      'noppera','rokurokubi','nurikabe','sunakake','chochin','amefuri',
+      'ittan','wanyudo','yuki_onna','oni','nekomata','yamanba',
+      'umibouzu','amanojaku','kasha','tsuchigumo','bakekujira',
+      'nue','kyubi','dai_tengu','shuten_doji','tamamo','ryujin','susanoo'
+    ];
+    ALL_IDS.forEach(id => {
+      this.load.image(`img_${id}`, `images/cards/${id}.png`);
+    });
+  }
+
   create() {
-    // 妖怪スプライトを全シーン共通で生成
+    // 妖怪スプライトを全シーン共通で生成（フォールバック用）
     createYokaiSprites(this);
+
+    // 外部画像が読み込めたカードは sp_ より img_ を優先
+    Object.keys(CARD_SPRITE).forEach(id => {
+      if (this.textures.exists(`img_${id}`)) {
+        CARD_SPRITE[id] = `img_${id}`;
+      }
+    });
 
     const loaded = GameState.load();
 

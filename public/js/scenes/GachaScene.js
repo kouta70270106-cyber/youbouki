@@ -168,12 +168,13 @@ class GachaScene extends Phaser.Scene {
 
     // カードスプライト
     const rarity = D.rarity[card.rarity];
-    try {
-      const sprite = this.add.image(W / 2, resultY + 70, card.id);
+    const sprKey = CARD_SPRITE[card.id];
+    if (sprKey && this.textures.exists(sprKey)) {
+      const sprite = this.add.image(W / 2, resultY + 70, sprKey);
       const sc = Math.min(80 / sprite.width, 80 / sprite.height);
       sprite.setScale(sc);
       this._resultObjs.push(sprite);
-    } catch(e) { /* スプライトなければスキップ */ }
+    }
 
     // カード名
     const nameT = this.add.text(W / 2, resultY + 122, card.name, {
