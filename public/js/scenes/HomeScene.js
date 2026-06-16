@@ -308,16 +308,10 @@ class HomeScene extends Phaser.Scene {
       targets: thinRing, angle: -360, duration: 70000, ease: 'Linear', repeat: -1,
     });
 
-    // 4. 暗ディスク
-    const disk = track(this.add.graphics());
-    disk.fillStyle(0x0b0712, 0.88);
-    disk.fillCircle(0, 0, 82);
-    disk.setPosition(cx, cy);
-
-    // 5. 妖怪スプライト
+    // 5. 妖怪スプライト（背景除去済み・大きく表示）
     if (sprKey && this.textures.exists(sprKey)) {
       const spr = track(this.add.image(cx, cy - 4, sprKey).setOrigin(0.5));
-      const maxPx = 82 * 2 * 0.64;
+      const maxPx = 82 * 2 * 0.92;
       const sc = Math.min(maxPx / spr.width, maxPx / spr.height);
       spr.setScale(sc);
       this.tweens.add({
