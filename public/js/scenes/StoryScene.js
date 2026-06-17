@@ -347,16 +347,16 @@ class StoryScene extends Phaser.Scene {
 
     const prog  = GameState.player.stageProgress[ch.id] || 0;
     const cx    = W / 2;
-    const areaT = 20;
-    // パネルが出る分を考慮して上部にノードを配置
-    const areaH = (H - 62) - areaT - this.PANEL_H - 20;
+    // 上から60px・下から50pxを余白にして空やパネルを避ける
+    const areaT = 60;
+    const areaH = (H - 62) - areaT - 50;
 
     const NP = [
-      { x: cx + 80,  y: areaT + areaH * 0.88 },
-      { x: cx - 70,  y: areaT + areaH * 0.66 },
-      { x: cx + 60,  y: areaT + areaH * 0.44 },
-      { x: cx - 80,  y: areaT + areaH * 0.22 },
-      { x: cx,       y: areaT + areaH * 0.04 },
+      { x: cx + 80,  y: areaT + areaH * 0.85 },
+      { x: cx - 70,  y: areaT + areaH * 0.65 },
+      { x: cx + 60,  y: areaT + areaH * 0.46 },
+      { x: cx - 80,  y: areaT + areaH * 0.27 },
+      { x: cx,       y: areaT + areaH * 0.10 }, // BOSSを空から離す
     ];
 
     // 接続線
