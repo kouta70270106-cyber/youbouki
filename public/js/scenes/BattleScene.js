@@ -1156,33 +1156,34 @@ class BattleScene extends Phaser.Scene {
       }
       GameState.save();
 
-      this.add.text(W / 2, H / 2 - 88, '勝利！', {
+      // 勝利テキストを上寄りに配置してスペースを確保
+      let nextY = Math.floor(H * 0.14);
+      this.add.text(W / 2, nextY, '勝利！', {
         fontSize: '48px', color: '#ffdd44', fontFamily: 'serif',
         stroke: '#aa5500', strokeThickness: 6
       }).setOrigin(0.5);
-
-      let nextY = H / 2 - 26;
+      nextY += 68;
 
       if (firstClear && this.battleData.postText) {
-        this.add.text(W / 2, nextY, this.battleData.postText, {
+        const pt = this.add.text(W / 2, nextY, this.battleData.postText, {
           fontSize: '13px', color: '#b89adc', fontFamily: 'serif',
           align: 'center', lineSpacing: 6, stroke: '#080310', strokeThickness: 3,
           wordWrap: { width: W - 48 },
         }).setOrigin(0.5);
-        nextY += 90;
+        nextY += pt.height + 18;
       } else if (this.chapterId === 3 && isLastBattle && firstClear) {
-        this.add.text(W / 2, nextY, '……あの名前を、知っている気がする。\nまるで、自分の名前のように。', {
+        const pt = this.add.text(W / 2, nextY, '……あの名前を、知っている気がする。\nまるで、自分の名前のように。', {
           fontSize: '13px', color: '#b89adc', fontFamily: 'serif',
           align: 'center', lineSpacing: 6, stroke: '#080310', strokeThickness: 3,
         }).setOrigin(0.5);
-        nextY += 58;
+        nextY += pt.height + 18;
       }
       if (isFirstBattleClear) {
         this.add.text(W / 2, nextY, `🔮 呪魂 +2（所持: ${GameState.player.jureikon}）`, {
           fontSize: '14px', color: '#cc88ff', fontFamily: 'serif',
           stroke: '#080310', strokeThickness: 3,
         }).setOrigin(0.5);
-        nextY += 36;
+        nextY += 34;
       }
       if (firstClear && (chapter.reward || []).length > 0) {
         const uniqueReward = [...new Set(chapter.reward)];
@@ -1190,9 +1191,10 @@ class BattleScene extends Phaser.Scene {
           fontSize: '14px', color: '#44cc88', fontFamily: 'serif',
           stroke: '#080310', strokeThickness: 3,
         }).setOrigin(0.5);
-        nextY += 36;
+        nextY += 34;
       }
 
+      nextY += 8;
       if (!isLastBattle) {
         const nextBtn = this.add.text(W / 2, nextY, '次のステージへ', {
           fontSize: '20px', color: '#e8c87a', fontFamily: 'serif',
@@ -1205,7 +1207,7 @@ class BattleScene extends Phaser.Scene {
             story: true
           });
         });
-        nextY += 56;
+        nextY += 54;
       }
 
       // 第10章最終バトルクリア → エンディングへ
@@ -1227,6 +1229,13 @@ class BattleScene extends Phaser.Scene {
           this.scene.start('StoryScene');
         }
       });
+      nextY += 54;
+
+      // ホームへボタンをコンテンツの下に配置
+      const backBtn = this.add.text(W / 2, nextY, 'ホームへ', {
+        fontSize: '14px', color: '#665577', fontFamily: 'serif'
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      backBtn.on('pointerdown', () => this.scene.start('HomeScene'));
 
     } else {
       this.add.text(W / 2, H / 2 - 60, '敗北…', {
@@ -1237,7 +1246,6 @@ class BattleScene extends Phaser.Scene {
         fontSize: '22px', color: '#e8c87a', fontFamily: 'serif',
         backgroundColor: '#2a1040aa', padding: { x: 16, y: 8 }
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
       retryBtn.on('pointerdown', () => {
         this.scene.start('BattleScene', {
           chapterId: this.chapterId,
@@ -1245,11 +1253,11 @@ class BattleScene extends Phaser.Scene {
           story: true
         });
       });
-    }
 
-    const backBtn = this.add.text(W / 2, H / 2 + 130, 'ホームへ', {
-      fontSize: '14px', color: '#665577', fontFamily: 'serif'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    backBtn.on('pointerdown', () => this.scene.start('HomeScene'));
+      const backBtn = this.add.text(W / 2, H / 2 + 130, 'ホームへ', {
+        fontSize: '14px', color: '#665577', fontFamily: 'serif'
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      backBtn.on('pointerdown', () => this.scene.start('HomeScene'));
+    }
   }
 }
