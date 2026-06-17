@@ -19,9 +19,11 @@ class BootScene extends Phaser.Scene {
     // 妖怪スプライトを全シーン共通で生成（フォールバック用）
     createYokaiSprites(this);
 
-    // 外部画像が読み込めたカードは sp_ より img_ を優先
+    // 外部画像が読み込めたカードは nobg_（背景除去済み）を優先
     Object.keys(CARD_SPRITE).forEach(id => {
-      if (this.textures.exists(`img_${id}`)) {
+      if (this.textures.exists(`nobg_${id}`)) {
+        CARD_SPRITE[id] = `nobg_${id}`;
+      } else if (this.textures.exists(`img_${id}`)) {
         CARD_SPRITE[id] = `img_${id}`;
       }
     });

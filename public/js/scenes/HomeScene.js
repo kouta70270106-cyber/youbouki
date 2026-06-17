@@ -258,9 +258,7 @@ class HomeScene extends Phaser.Scene {
     const id   = owned[this._yokaiIdx];
     const card = D.cards.find(c => c.id === id);
     const rar  = card ? D.rarity[card.rarity] : null;
-    // ホーム画面は背景除去済み透過画像を優先使用
-    const nobgKey = `nobg_${id}`;
-    const sprKey  = this.textures.exists(nobgKey) ? nobgKey : CARD_SPRITE[id];
+    const sprKey = CARD_SPRITE[id];
 
     const glowColors = {
       common:    0x5a7a6a,
