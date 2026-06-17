@@ -328,8 +328,8 @@ class BattleScene extends Phaser.Scene {
     const s = this.state;
 
     // ===== 魂表示 =====
-    this.drawSouls(W / 2, 24,     s.enemy.name,  s.enemy.souls,  'enemy');
-    this.drawSouls(W / 2, H - 24, s.player.name, s.player.souls, 'player');
+    this.drawSouls(W / 2, 24,      s.enemy.name,  s.enemy.souls,  'enemy');
+    this.drawSouls(W / 2, H - 108, s.player.name, s.player.souls, 'player');
 
     // ===== エネルギー =====
     const eTxt = this.add.text(W - 20, H / 2 - 24,
