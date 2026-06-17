@@ -10,7 +10,8 @@ class BootScene extends Phaser.Scene {
       'nue','kyubi','dai_tengu','shuten_doji','tamamo','ryujin','susanoo'
     ];
     ALL_IDS.forEach(id => {
-      this.load.image(`img_${id}`, `images/cards/${id}.png`);
+      this.load.image(`img_${id}`,   `images/cards/${id}.png`);
+      this.load.image(`nobg_${id}`,  `images/cards/nobg/${id}.png`);
     });
   }
 

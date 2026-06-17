@@ -258,7 +258,9 @@ class HomeScene extends Phaser.Scene {
     const id   = owned[this._yokaiIdx];
     const card = D.cards.find(c => c.id === id);
     const rar  = card ? D.rarity[card.rarity] : null;
-    const sprKey = CARD_SPRITE[id];
+    // ホーム画面は背景除去済み透過画像を優先使用
+    const nobgKey = `nobg_${id}`;
+    const sprKey  = this.textures.exists(nobgKey) ? nobgKey : CARD_SPRITE[id];
 
     const glowColors = {
       common:    0x5a7a6a,
@@ -308,7 +310,7 @@ class HomeScene extends Phaser.Scene {
       targets: thinRing, angle: -360, duration: 70000, ease: 'Linear', repeat: -1,
     });
 
-    // 5. 妖怪スプライト（背景除去済み・大きく表示）
+    // 5. 妖怪スプライト（背景除去済み透過画像）
     if (sprKey && this.textures.exists(sprKey)) {
       const spr = track(this.add.image(cx, cy - 4, sprKey).setOrigin(0.5));
       const maxPx = 82 * 2 * 0.92;
