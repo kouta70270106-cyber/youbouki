@@ -398,9 +398,9 @@ high quality digital illustration, no text, square composition
 | 5 | wanyudo.png | 輪入道 | 🔄 再生成 |
 | 6 | yuki_onna.png | 雪女 | 🔄 再生成 |
 | 7 | oni.png | 鬼 | 🔄 再生成 |
-| 8 | nekomata.png | 猫又 | 🔄 再生成 |
-| 9 | yamanba.png | 山姥 | 🔄 再生成 |
-| 10 | umibouzu.png | 海坊主 | 🔄 再生成 |
+| 8 | nekomata.png | 猫又 | ✅ 完了 |
+| 9 | yamanba.png | 山姥 | ✅ 完了 |
+| 10 | umibouzu.png | 海坊主 | ✅ 完了 |
 | 11 | amanojaku.png | 天邪鬼 | ⬜ 未生成 |
 | 12 | kasha.png | 火車 | ⬜ 未生成 |
 | 13 | tsuchigumo.png | 土蜘蛛 | ⬜ 未生成 |
