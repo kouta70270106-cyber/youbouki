@@ -2,6 +2,12 @@
 class StoryScene extends Phaser.Scene {
   constructor() { super('StoryScene'); }
 
+  preload() {
+    for (let i = 1; i <= 10; i++) {
+      this.load.image(`ch_bg_${i}`, `images/chapters/ch${i}.png`);
+    }
+  }
+
   create() {
     SE.init();
     SE.playBGM('title');
@@ -119,11 +125,20 @@ class StoryScene extends Phaser.Scene {
       bg.lineStyle(1, 0x222233, 0.4);
       bg.strokeRoundedRect(bx, by, cW, cH, 8);
     } else {
-      // 左: アクセントカラー / 右: 暗いオーバーレイ（グラデーション風）
-      bg.fillStyle(accent, 1);
-      bg.fillRoundedRect(bx, by, cW, cH, 8);
-      bg.fillStyle(0x060214, 0.65);
-      bg.fillRoundedRect(bx + cW * 0.28, by, cW * 0.72, cH, 8);
+      const imgKey = `ch_bg_${ch.id}`;
+      if (this.textures.exists(imgKey)) {
+        // 章背景画像をカードサイズに合わせて表示
+        const img = this.add.image(bx + cW / 2, cy, imgKey)
+          .setDisplaySize(cW, cH)
+          .setAlpha(0.45);
+        C.add(img);
+        // 暗いオーバーレイで視認性を確保
+        bg.fillStyle(0x060214, 0.55).fillRoundedRect(bx, by, cW, cH, 8);
+      } else {
+        // 画像なし: 従来のアクセントカラー
+        bg.fillStyle(accent, 1).fillRoundedRect(bx, by, cW, cH, 8);
+        bg.fillStyle(0x060214, 0.65).fillRoundedRect(bx + cW * 0.28, by, cW * 0.72, cH, 8);
+      }
       bg.lineStyle(1, cleared ? 0x44cc88 : 0x5533aa, 0.6);
       bg.strokeRoundedRect(bx, by, cW, cH, 8);
       // 左アクセントバー
@@ -298,6 +313,20 @@ class StoryScene extends Phaser.Scene {
     const g = ()     => { const o = this.add.graphics();      C.add(o); return o; };
     const t = (...a) => { const o = this.add.text(...a);      C.add(o); return o; };
     const r = (...a) => { const o = this.add.rectangle(...a); C.add(o); return o; };
+
+    // マップ背景画像（あれば）
+    const imgKey = `ch_bg_${ch.id}`;
+    if (this.textures.exists(imgKey)) {
+      const mapH = H - 62;
+      const img = this.add.image(MAP_W / 2, mapH / 2, imgKey)
+        .setDisplaySize(MAP_W, mapH)
+        .setAlpha(0.55);
+      C.add(img);
+      // 暗いオーバーレイでノードを見やすく
+      const overlay = this.add.graphics();
+      overlay.fillStyle(0x020010, 0.45).fillRect(0, 0, MAP_W, mapH);
+      C.add(overlay);
+    }
 
     const prog  = GameState.player.stageProgress[ch.id] || 0;
     const cx    = MAP_W / 2;
