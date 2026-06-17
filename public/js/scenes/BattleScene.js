@@ -9,6 +9,10 @@ class BattleScene extends Phaser.Scene {
     this.isStory     = data.story       || true;
   }
 
+  preload() {
+    this.load.image(`ch_bg_${this.chapterId}`, `images/chapters/ch${this.chapterId}.png`);
+  }
+
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
@@ -61,102 +65,140 @@ class BattleScene extends Phaser.Scene {
   }
 
   _showPreDialogue(text) {
-    const W = this.W, H = this.H;
     SE.playBGM('title');
-
-    const chapter = D.chapters.find(c => c.id === this.chapterId);
-
-    // 追跡リスト（ボタン押下時に全削除）
-    this._dlgObjs = [];
-    const reg = obj => { this._dlgObjs.push(obj); return obj; };
-
-    // ── 背景 ──
-    const bg = reg(this.add.graphics());
-    bg.fillStyle(0x080315, 1);
-    bg.fillRect(0, 0, W, H);
-
-    // ── ヘッダー ──
-    reg(this.add.text(W / 2, 28,
-      `${chapter.title}　ステージ ${this.battleIndex + 1}`, {
-        fontFamily: 'serif', fontSize: '13px', color: '#9966cc',
-      }).setOrigin(0.5));
-
-    const hDiv = reg(this.add.graphics());
-    hDiv.lineStyle(1, 0x3a1a5a, 1);
-    hDiv.lineBetween(16, 50, W - 16, 50);
-
-    // ── ストーリーテキスト（単一オブジェクト・固定座標）──
-    reg(this.add.text(20, 58, this._formatForDisplay(text), {
-      fontFamily: 'serif',
-      fontSize: '13px',
-      color: '#c8c0e0',
-      lineSpacing: 7,
-    }));
-
-    // ── フッター区切り（固定 y=600）──
-    const fDiv = reg(this.add.graphics());
-    fDiv.fillStyle(0x080315, 1);
-    fDiv.fillRect(0, 600, W, H - 600);
-    fDiv.lineStyle(1, 0x3a1a5a, 0.9);
-    fDiv.lineBetween(16, 600, W - 16, 600);
-
-    // ── vs 表示（固定 y=634）──
-    reg(this.add.text(W / 2, 634, `vs.  ${this.battleData.enemy}`, {
-      fontFamily: 'serif', fontSize: '15px', color: '#cc5555',
-      stroke: '#1a0000', strokeThickness: 3,
-    }).setOrigin(0.5));
-
-    // ── バトル開始ボタン（固定 y=672）──
-    const btn = reg(this.add.text(W / 2, 672, 'バトル開始 →', {
-      fontFamily: 'serif', fontSize: '18px', color: '#e8c87a',
-      backgroundColor: '#2a1040', padding: { x: 20, y: 10 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }));
-
-    btn.on('pointerover', () => btn.setColor('#ffffff'));
-    btn.on('pointerout',  () => btn.setColor('#e8c87a'));
-    btn.on('pointerdown', () => {
-      SE.playSE('click');
-      this._dlgObjs.forEach(o => { if (o && o.destroy) o.destroy(); });
-      this._dlgObjs = [];
-      this._startBattle();
-    });
+    this._showDialogue(text, () => this._startBattle());
   }
 
-  // 「話者：「台詞」」を「▷ 話者\n台詞」形式に変換して1文字列にまとめる
-  // ※日本語はスペースなしのためPhaserのwordWrapが機能しない。手動折り返し。
-  _formatForDisplay(text) {
-    const MAX = 22; // 1行の最大文字数（13px serif、440px幅で余裕をもって収まる）
-    const BREAK_CHARS = '。、！？」』）…―\n';
+  // タイプライター演出付き対話システム
+  _showDialogue(text, onComplete) {
+    const W = this.W, H = this.H;
+    const chapter = D.chapters.find(c => c.id === this.chapterId);
+    const DEPTH = 50;
 
-    const wrapLine = s => {
-      if (s.length <= MAX) return s;
-      const parts = [];
-      let rest = s;
-      while (rest.length > MAX) {
-        // MAX付近の句読点を探して自然な位置で折り返す
-        let breakAt = MAX;
-        for (let i = MAX; i >= MAX - 6; i--) {
-          if (BREAK_CHARS.includes(rest[i] || '')) {
-            breakAt = i + 1;
-            break;
-          }
-        }
-        parts.push(rest.slice(0, breakAt));
-        rest = rest.slice(breakAt).trimStart();
+    // テキストをセリフ単位に分割（空行はセパレーターとして使用）
+    const segments = [];
+    for (const line of text.split('\n')) {
+      if (!line.trim()) continue;
+      const m = line.match(/^(.{1,12})：(.+)/);
+      if (m) {
+        segments.push({ speaker: m[1], text: m[2] });
+      } else {
+        segments.push({ speaker: null, text: line });
       }
-      if (rest) parts.push(rest);
-      return parts.join('\n');
+    }
+    if (!segments.length) { onComplete(); return; }
+
+    const dlgObjs = [];
+    const reg = o => { dlgObjs.push(o); return o; };
+    let dlgTimer = null;
+
+    const cleanup = () => {
+      if (dlgTimer) { dlgTimer.remove(); dlgTimer = null; }
+      dlgObjs.forEach(o => { try { if (o?.destroy) o.destroy(); } catch(e){} });
+      dlgObjs.length = 0;
+      this.input.off('pointerdown', tapHandler);
     };
 
-    return text.split('\n').map(line => {
-      if (!line.trim()) return '';
-      const m = line.match(/^(.{1,10})：[「『（](.+)/);
-      if (m) {
-        const dialogue = line.replace(/^.+?：/, '');
-        return `▷ ${m[1]}\n${wrapLine(dialogue)}`;
+    // 暗いオーバーレイ
+    reg(this.add.graphics().setDepth(DEPTH))
+      .fillStyle(0x000000, 0.78).fillRect(0, 0, W, H);
+
+    // 章背景画像（薄く）
+    const imgKey = `ch_bg_${this.chapterId}`;
+    if (this.textures.exists(imgKey)) {
+      reg(this.add.image(W / 2, H / 2, imgKey)
+        .setDisplaySize(W, H).setAlpha(0.28).setDepth(DEPTH + 1));
+    }
+
+    // 章・ステージヘッダー
+    reg(this.add.text(W / 2, 22,
+      `${chapter?.title || ''}　第${this.battleIndex + 1}話`, {
+        fontFamily: 'serif', fontSize: '11px', color: '#553388',
+      }).setOrigin(0.5).setDepth(DEPTH + 2));
+
+    // vs表示
+    reg(this.add.text(W / 2, H * 0.42,
+      `vs.  ${this.battleData.enemy}`, {
+        fontFamily: 'serif', fontSize: '15px', color: '#cc4444',
+        stroke: '#1a0000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(DEPTH + 2));
+
+    // テキストボックス（下部）
+    const BOX_Y = Math.floor(H * 0.54);
+    const BOX_H = H - BOX_Y - 12;
+    reg(this.add.graphics().setDepth(DEPTH + 2))
+      .fillStyle(0x040112, 0.94)
+      .fillRoundedRect(10, BOX_Y, W - 20, BOX_H, 10)
+      .lineStyle(1, 0x6633aa, 0.55)
+      .strokeRoundedRect(10, BOX_Y, W - 20, BOX_H, 10);
+
+    // 話者名プレート
+    const speakerTag = reg(this.add.text(20, BOX_Y - 2, '', {
+      fontFamily: 'serif', fontSize: '13px', color: '#e8c87a',
+      backgroundColor: '#1a0840dd', padding: { x: 10, y: 4 },
+    }).setOrigin(0, 1).setDepth(DEPTH + 3));
+
+    // メインテキスト
+    const mainTxt = reg(this.add.text(22, BOX_Y + 14, '', {
+      fontFamily: 'serif', fontSize: '14px', color: '#d4c8e8',
+      lineSpacing: 9, wordWrap: { width: W - 44 },
+    }).setDepth(DEPTH + 3));
+
+    // タップ促進インジケーター（▼）
+    const tapHint = reg(this.add.text(W - 22, BOX_Y + BOX_H - 12, '▼', {
+      fontFamily: 'serif', fontSize: '13px', color: '#8855cc',
+    }).setOrigin(1, 1).setAlpha(0).setDepth(DEPTH + 3));
+
+    let segIdx = 0, isTyping = false, fullText = '';
+
+    const showSeg = idx => {
+      if (idx >= segments.length) { cleanup(); onComplete(); return; }
+      const seg = segments[idx];
+      speakerTag.setText(seg.speaker || '').setVisible(!!seg.speaker);
+      fullText = seg.text;
+      mainTxt.setText('');
+      isTyping = true;
+      this.tweens.killTweensOf(tapHint);
+      tapHint.setAlpha(0);
+
+      let ci = 0;
+      dlgTimer = this.time.addEvent({
+        delay: 38,
+        repeat: fullText.length,
+        callback: () => {
+          ci++;
+          mainTxt.setText(fullText.slice(0, ci));
+          if (ci >= fullText.length) {
+            isTyping = false;
+            dlgTimer = null;
+            this.tweens.add({
+              targets: tapHint, alpha: 0.8,
+              duration: 500, yoyo: true, repeat: -1,
+            });
+          }
+        },
+      });
+    };
+
+    const tapHandler = () => {
+      if (isTyping) {
+        // タイプライター飛ばし
+        if (dlgTimer) { dlgTimer.remove(); dlgTimer = null; }
+        mainTxt.setText(fullText);
+        isTyping = false;
+        this.tweens.killTweensOf(tapHint);
+        this.tweens.add({ targets: tapHint, alpha: 0.8, duration: 500, yoyo: true, repeat: -1 });
+      } else {
+        // 次のセリフへ
+        this.tweens.killTweensOf(tapHint);
+        tapHint.setAlpha(0);
+        segIdx++;
+        showSeg(segIdx);
       }
-      return wrapLine(line);
-    }).join('\n');
+    };
+
+    this.input.on('pointerdown', tapHandler);
+    showSeg(0);
   }
 
   // カスタムデッキ or 所持カード全部をデッキIDリストとして返す
@@ -1128,10 +1170,10 @@ class BattleScene extends Phaser.Scene {
     SE.playSE(result === 'win' ? 'victory' : 'defeat');
 
     const W = this.W, H = this.H;
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7);
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7);
 
     if (result === 'win') {
-      const chapter     = D.chapters.find(c => c.id === this.chapterId);
+      const chapter      = D.chapters.find(c => c.id === this.chapterId);
       const isLastBattle = this.battleIndex >= chapter.battles.length - 1;
 
       // stageProgress 更新
@@ -1156,88 +1198,26 @@ class BattleScene extends Phaser.Scene {
       }
       GameState.save();
 
-      // 勝利テキストを上寄りに配置してスペースを確保
-      let nextY = Math.floor(H * 0.14);
-      this.add.text(W / 2, nextY, '勝利！', {
-        fontSize: '48px', color: '#ffdd44', fontFamily: 'serif',
-        stroke: '#aa5500', strokeThickness: 6
-      }).setOrigin(0.5);
-      nextY += 68;
+      // postText がある場合は先にダイアログ演出 → その後勝利画面
+      const showPost = this.isStory && firstClear && this.battleData.postText;
+      const ch3Post  = this.isStory && firstClear && this.chapterId === 3 && isLastBattle
+        && !this.battleData.postText
+        && '……あの名前を、知っている気がする。\nまるで、自分の名前のように。';
 
-      if (firstClear && this.battleData.postText) {
-        const pt = this.add.text(W / 2, nextY, this.battleData.postText, {
-          fontSize: '13px', color: '#b89adc', fontFamily: 'serif',
-          align: 'center', lineSpacing: 6, stroke: '#080310', strokeThickness: 3,
-          wordWrap: { width: W - 48 },
-        }).setOrigin(0.5);
-        nextY += pt.height + 18;
-      } else if (this.chapterId === 3 && isLastBattle && firstClear) {
-        const pt = this.add.text(W / 2, nextY, '……あの名前を、知っている気がする。\nまるで、自分の名前のように。', {
-          fontSize: '13px', color: '#b89adc', fontFamily: 'serif',
-          align: 'center', lineSpacing: 6, stroke: '#080310', strokeThickness: 3,
-        }).setOrigin(0.5);
-        nextY += pt.height + 18;
-      }
-      if (isFirstBattleClear) {
-        this.add.text(W / 2, nextY, `🔮 呪魂 +2（所持: ${GameState.player.jureikon}）`, {
-          fontSize: '14px', color: '#cc88ff', fontFamily: 'serif',
-          stroke: '#080310', strokeThickness: 3,
-        }).setOrigin(0.5);
-        nextY += 34;
-      }
-      if (firstClear && (chapter.reward || []).length > 0) {
-        const uniqueReward = [...new Set(chapter.reward)];
-        this.add.text(W / 2, nextY, `✦ 新たな妖怪カード ${uniqueReward.length} 種を入手！`, {
-          fontSize: '14px', color: '#44cc88', fontFamily: 'serif',
-          stroke: '#080310', strokeThickness: 3,
-        }).setOrigin(0.5);
-        nextY += 34;
-      }
+      const showVictory = () => {
+        this._showVictoryScreen(chapter, isLastBattle, firstClear, isFirstBattleClear);
+      };
 
-      nextY += 8;
-      if (!isLastBattle) {
-        const nextBtn = this.add.text(W / 2, nextY, '次のステージへ', {
-          fontSize: '20px', color: '#e8c87a', fontFamily: 'serif',
-          backgroundColor: '#2a1040aa', padding: { x: 16, y: 8 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        nextBtn.on('pointerdown', () => {
-          this.scene.start('BattleScene', {
-            chapterId: this.chapterId,
-            battleIndex: this.battleIndex + 1,
-            story: true
-          });
-        });
-        nextY += 54;
+      if (showPost) {
+        this._showDialogue(this.battleData.postText, showVictory);
+      } else if (ch3Post) {
+        this._showDialogue(ch3Post, showVictory);
+      } else {
+        showVictory();
       }
-
-      // 第10章最終バトルクリア → エンディングへ
-      const isTrueEnding = isLastBattle && this.chapterId === 10;
-      const storyBtnLabel = isTrueEnding ? 'エンディングへ ▶' : isLastBattle ? 'ストーリーへ戻る' : 'ストーリーへ';
-      const storyBtn = this.add.text(W / 2, nextY, storyBtnLabel, {
-        fontSize: isLastBattle ? '20px' : '15px', fontFamily: 'serif',
-        color: isTrueEnding ? '#ffd700' : isLastBattle ? '#e8c87a' : '#b89adc',
-        backgroundColor: isTrueEnding ? '#3a2000aa' : '#2a1040aa',
-        padding: { x: 16, y: 8 }
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-      storyBtn.on('pointerdown', () => {
-        if (isTrueEnding) {
-          this.cameras.main.fadeOut(1200, 0, 0, 0);
-          this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start('EndingScene');
-          });
-        } else {
-          this.scene.start('StoryScene');
-        }
-      });
-      nextY += 54;
-
-      // ホームへボタンをコンテンツの下に配置
-      const backBtn = this.add.text(W / 2, nextY, 'ホームへ', {
-        fontSize: '14px', color: '#665577', fontFamily: 'serif'
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-      backBtn.on('pointerdown', () => this.scene.start('HomeScene'));
 
     } else {
+      const W = this.W, H = this.H;
       this.add.text(W / 2, H / 2 - 60, '敗北…', {
         fontSize: '48px', color: '#ff4444', fontFamily: 'serif'
       }).setOrigin(0.5);
@@ -1254,10 +1234,78 @@ class BattleScene extends Phaser.Scene {
         });
       });
 
-      const backBtn = this.add.text(W / 2, H / 2 + 130, 'ホームへ', {
+      this.add.text(W / 2, H / 2 + 130, 'ホームへ', {
         fontSize: '14px', color: '#665577', fontFamily: 'serif'
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-      backBtn.on('pointerdown', () => this.scene.start('HomeScene'));
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.scene.start('HomeScene'));
     }
+  }
+
+  _showVictoryScreen(chapter, isLastBattle, firstClear, isFirstBattleClear) {
+    const W = this.W, H = this.H;
+
+    let nextY = Math.floor(H * 0.14);
+    this.add.text(W / 2, nextY, '勝利！', {
+      fontSize: '48px', color: '#ffdd44', fontFamily: 'serif',
+      stroke: '#aa5500', strokeThickness: 6
+    }).setOrigin(0.5);
+    nextY += 68;
+
+    if (isFirstBattleClear) {
+      this.add.text(W / 2, nextY, `🔮 呪魂 +2（所持: ${GameState.player.jureikon}）`, {
+        fontSize: '14px', color: '#cc88ff', fontFamily: 'serif',
+        stroke: '#080310', strokeThickness: 3,
+      }).setOrigin(0.5);
+      nextY += 36;
+    }
+    if (firstClear && (chapter.reward || []).length > 0) {
+      const uniqueReward = [...new Set(chapter.reward)];
+      this.add.text(W / 2, nextY, `✦ 新たな妖怪カード ${uniqueReward.length} 種を入手！`, {
+        fontSize: '14px', color: '#44cc88', fontFamily: 'serif',
+        stroke: '#080310', strokeThickness: 3,
+      }).setOrigin(0.5);
+      nextY += 36;
+    }
+
+    nextY += 14;
+    if (!isLastBattle) {
+      const nextBtn = this.add.text(W / 2, nextY, '次のステージへ', {
+        fontSize: '20px', color: '#e8c87a', fontFamily: 'serif',
+        backgroundColor: '#2a1040aa', padding: { x: 16, y: 8 }
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      nextBtn.on('pointerdown', () => {
+        this.scene.start('BattleScene', {
+          chapterId: this.chapterId,
+          battleIndex: this.battleIndex + 1,
+          story: true
+        });
+      });
+      nextY += 54;
+    }
+
+    const isTrueEnding  = isLastBattle && this.chapterId === 10;
+    const storyBtnLabel = isTrueEnding ? 'エンディングへ ▶' : isLastBattle ? 'ストーリーへ戻る' : 'ストーリーへ';
+    const storyBtn = this.add.text(W / 2, nextY, storyBtnLabel, {
+      fontSize: isLastBattle ? '20px' : '15px', fontFamily: 'serif',
+      color: isTrueEnding ? '#ffd700' : isLastBattle ? '#e8c87a' : '#b89adc',
+      backgroundColor: isTrueEnding ? '#3a2000aa' : '#2a1040aa',
+      padding: { x: 16, y: 8 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    storyBtn.on('pointerdown', () => {
+      if (isTrueEnding) {
+        this.cameras.main.fadeOut(1200, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('EndingScene');
+        });
+      } else {
+        this.scene.start('StoryScene');
+      }
+    });
+    nextY += 54;
+
+    this.add.text(W / 2, nextY, 'ホームへ', {
+      fontSize: '14px', color: '#665577', fontFamily: 'serif'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.scene.start('HomeScene'));
   }
 }
