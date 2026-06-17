@@ -130,10 +130,10 @@ class StoryScene extends Phaser.Scene {
         // 章背景画像をカードサイズに合わせて表示
         const img = this.add.image(bx + cW / 2, cy, imgKey)
           .setDisplaySize(cW, cH)
-          .setAlpha(0.45);
+          .setAlpha(0.7);
         C.add(img);
         // 暗いオーバーレイで視認性を確保
-        bg.fillStyle(0x060214, 0.55).fillRoundedRect(bx, by, cW, cH, 8);
+        bg.fillStyle(0x060214, 0.38).fillRoundedRect(bx, by, cW, cH, 8);
       } else {
         // 画像なし: 従来のアクセントカラー
         bg.fillStyle(accent, 1).fillRoundedRect(bx, by, cW, cH, 8);
@@ -320,11 +320,11 @@ class StoryScene extends Phaser.Scene {
       const mapH = H - 62;
       const img = this.add.image(MAP_W / 2, mapH / 2, imgKey)
         .setDisplaySize(MAP_W, mapH)
-        .setAlpha(0.55);
+        .setAlpha(0.75);
       C.add(img);
-      // 暗いオーバーレイでノードを見やすく
+      // 薄いオーバーレイでノードを見やすく
       const overlay = this.add.graphics();
-      overlay.fillStyle(0x020010, 0.45).fillRect(0, 0, MAP_W, mapH);
+      overlay.fillStyle(0x020010, 0.28).fillRect(0, 0, MAP_W, mapH);
       C.add(overlay);
     }
 
