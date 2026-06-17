@@ -206,57 +206,54 @@ class StoryScene extends Phaser.Scene {
   }
 
   // ============================================================
-  // ステージ選択ビュー（左マップ＋右パネル）
+  // ステージ選択ビュー（全画面マップ＋下スライドパネル）
   // ============================================================
   _buildStageView() {
-    const { MAP_W, PANEL_W, W, H } = this;
-    const px = MAP_W;
+    const { W, H } = this;
+    const PANEL_H = 210;
 
-    // 右パネル背景
-    this.stagePanelBg = this.add.graphics().setDepth(8).setVisible(false);
-    this.stagePanelBg.fillStyle(0x06021a, 0.97).fillRect(px, 60, PANEL_W, H - 60);
-    this.stagePanelBg.lineStyle(1, 0x3a1a5a, 0.7).lineBetween(px, 60, px, H);
-    this.stagePanelBg.lineStyle(1, 0x5533aa, 0.4).lineBetween(px + 10, 68, W - 10, 68);
+    // ステージマップコンテナ（全画面、マスク付き）
+    this.stageMapCont = this.add.container(0, 62).setDepth(1).setVisible(false);
+    const maskG = this.make.graphics({ add: false });
+    maskG.fillStyle(0xffffff).fillRect(0, 62, W, H - 62);
+    this.stageMapCont.setMask(maskG.createGeometryMask());
 
-    const cx = px + PANEL_W / 2;
+    // 下スライドパネル（コンテナ）
+    this._panelY  = H;
+    this._panelCont = this.add.container(0, this._panelY).setDepth(20).setVisible(false);
 
-    this._pHint = this.add.text(cx, H / 2, '←\n話を\n選んでください', {
-      fontFamily: 'serif', fontSize: '11px', color: '#443366',
-      align: 'center', lineSpacing: 5,
-    }).setOrigin(0.5).setDepth(9).setVisible(false);
+    const panelBg = this.add.graphics();
+    panelBg.fillStyle(0x06021a, 0.96).fillRoundedRect(0, 0, W, PANEL_H, { tl: 18, tr: 18, bl: 0, br: 0 });
+    panelBg.lineStyle(1, 0x5533aa, 0.5).strokeRoundedRect(0, 0, W, PANEL_H, { tl: 18, tr: 18, bl: 0, br: 0 });
+    this._panelCont.add(panelBg);
 
-    this._pChNum = this.add.text(cx, 80, '', {
-      fontFamily: 'monospace', fontSize: '8px', color: '#7744aa',
-    }).setOrigin(0.5).setDepth(9).setVisible(false);
+    // パネル内テキスト
+    this._pChNum = this.add.text(20, 18, '', {
+      fontFamily: 'monospace', fontSize: '9px', color: '#7744aa',
+    });
+    this._pTitle = this.add.text(20, 34, '', {
+      fontFamily: 'serif', fontSize: '16px', color: '#e8c87a',
+    });
+    this._pDivG = this.add.graphics();
+    this._pDivG.lineStyle(1, 0x3a1a5a, 0.5).lineBetween(16, 66, W - 16, 66);
 
-    this._pTitle = this.add.text(cx, 104, '', {
-      fontFamily: 'serif', fontSize: '14px', color: '#e8c87a', align: 'center',
-    }).setOrigin(0.5).setDepth(9).setVisible(false);
-
-    this._pDivG = this.add.graphics().setDepth(9);
-
-    this._pEnemyLbl = this.add.text(px + 10, 136, '敵', {
+    this._pEnemyLbl = this.add.text(20, 74, '敵', {
       fontFamily: 'monospace', fontSize: '8px', color: '#554477',
-    }).setDepth(9).setVisible(false);
-
-    this._pEnemy = this.add.text(px + 10, 152, '', {
-      fontFamily: 'serif', fontSize: '12px', color: '#c8aae8',
-      wordWrap: { width: PANEL_W - 14 },
-    }).setDepth(9).setVisible(false);
-
-    this._pRewardLbl = this.add.text(px + 10, 176, '初回報酬', {
+    });
+    this._pEnemy = this.add.text(20, 88, '', {
+      fontFamily: 'serif', fontSize: '13px', color: '#c8aae8',
+    });
+    this._pRewardLbl = this.add.text(20, 112, '初回報酬', {
       fontFamily: 'monospace', fontSize: '8px', color: '#554477',
-    }).setDepth(9).setVisible(false);
+    });
+    this._pReward = this.add.text(20, 126, '', {
+      fontFamily: 'serif', fontSize: '12px', color: '#88cc88',
+    });
 
-    this._pReward = this.add.text(px + 10, 192, '', {
-      fontFamily: 'serif', fontSize: '11px', color: '#88cc88',
-    }).setDepth(9).setVisible(false);
-
-    this._pBtn = this.add.text(cx, H - 48, '⚔ 挑戦する ⚔', {
-      fontFamily: 'serif', fontSize: '13px', color: '#1a0800',
-      backgroundColor: '#e8c87a', padding: { x: 14, y: 10 },
-    }).setOrigin(0.5).setDepth(9).setVisible(false)
-      .setInteractive({ useHandCursor: true });
+    this._pBtn = this.add.text(W / 2, 172, '⚔ 挑戦する ⚔', {
+      fontFamily: 'serif', fontSize: '14px', color: '#1a0800',
+      backgroundColor: '#e8c87a', padding: { x: 24, y: 12 },
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     this._pBtn.on('pointerover', () => {
       this._pBtn.setColor('#000000'); this._pBtn.setBackgroundColor('#ffd700');
     });
@@ -270,81 +267,102 @@ class StoryScene extends Phaser.Scene {
       this.scene.start('BattleScene', { chapterId: ch.id, battleIndex: stageIdx, story: true });
     });
 
-    // ステージマップコンテナ（左側、マスク付き）
-    this.stageMapCont = this.add.container(0, 62).setDepth(1).setVisible(false);
-    const maskG = this.make.graphics({ add: false });
-    maskG.fillStyle(0xffffff).fillRect(0, 62, MAP_W, H - 62);
-    this.stageMapCont.setMask(maskG.createGeometryMask());
+    // 閉じるボタン
+    const closeBtn = this.add.text(W - 16, 18, '✕', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#664488',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => this._hidePanel());
+
+    this._panelCont.add([this._pChNum, this._pTitle, this._pDivG,
+      this._pEnemyLbl, this._pEnemy, this._pRewardLbl, this._pReward,
+      this._pBtn, closeBtn]);
 
     this._stageData = null;
+    this.PANEL_H = PANEL_H;
+  }
+
+  _showPanel() {
+    const { H, PANEL_H } = this;
+    this._panelCont.setVisible(true);
+    this.tweens.add({
+      targets: this._panelCont,
+      y: H - PANEL_H,
+      duration: 260,
+      ease: 'Back.Out',
+    });
+  }
+
+  _hidePanel() {
+    this.tweens.add({
+      targets: this._panelCont,
+      y: this.H,
+      duration: 200,
+      ease: 'Quad.In',
+      onComplete: () => this._panelCont.setVisible(false),
+    });
   }
 
   _updateStagePanel(ch, stageIdx, battle) {
     const CHN = ['一','二','三','四','五','六','七','八','九','十'];
-    const { MAP_W, PANEL_W } = this;
-    const px = MAP_W;
-
     this._stageData = { ch, stageIdx };
-    this._pHint.setVisible(false);
-    this._pChNum.setText(`CHAPTER ${ch.id}`).setVisible(true);
-    this._pTitle.setText(`第${CHN[ch.id - 1]}章\n第${stageIdx + 1}話`).setVisible(true);
+
+    this._pChNum.setText(`CHAPTER ${ch.id}`);
+    this._pTitle.setText(`第${CHN[ch.id - 1]}章  第${stageIdx + 1}話`);
 
     this._pDivG.clear()
       .lineStyle(1, 0x3a1a5a, 0.5)
-      .lineBetween(px + 8, 122, px + PANEL_W - 8, 122);
+      .lineBetween(16, 66, this.W - 16, 66);
 
-    this._pEnemyLbl.setVisible(true);
-    this._pEnemy.setText(battle.enemy).setVisible(true);
+    this._pEnemy.setText(battle.enemy);
 
-    const prog    = GameState.player.stageProgress[ch.id] || 0;
+    const prog   = GameState.player.stageProgress[ch.id] || 0;
     const isFirst = prog <= stageIdx;
     const isBoss  = stageIdx === 4;
-    this._pRewardLbl.setVisible(true);
     this._pReward
-      .setText(isFirst ? `呪魂 +2${isBoss ? '\nカード2枚' : ''}` : '受取済み')
-      .setColor(isFirst ? '#88cc88' : '#555566')
-      .setVisible(true);
-    this._pBtn.setVisible(true);
+      .setText(isFirst ? `呪魂 +2${isBoss ? '  カード2枚' : ''}` : '受取済み')
+      .setColor(isFirst ? '#88cc88' : '#555566');
+
+    this._showPanel();
   }
 
   _drawStageNodes(ch) {
-    const { MAP_W, H } = this;
+    const { W, H } = this;
     const C = this.stageMapCont;
     const g = ()     => { const o = this.add.graphics();      C.add(o); return o; };
     const t = (...a) => { const o = this.add.text(...a);      C.add(o); return o; };
     const r = (...a) => { const o = this.add.rectangle(...a); C.add(o); return o; };
 
-    // マップ背景画像（あれば）
+    // 背景画像（全画面）
     const imgKey = `ch_bg_${ch.id}`;
     if (this.textures.exists(imgKey)) {
       const mapH = H - 62;
-      const img = this.add.image(MAP_W / 2, mapH / 2, imgKey)
-        .setDisplaySize(MAP_W, mapH)
-        .setAlpha(0.75);
+      const img = this.add.image(W / 2, mapH / 2, imgKey)
+        .setDisplaySize(W, mapH)
+        .setAlpha(0.82);
       C.add(img);
-      // 薄いオーバーレイでノードを見やすく
       const overlay = this.add.graphics();
-      overlay.fillStyle(0x020010, 0.28).fillRect(0, 0, MAP_W, mapH);
+      overlay.fillStyle(0x020010, 0.22).fillRect(0, 0, W, mapH);
       C.add(overlay);
     }
 
     const prog  = GameState.player.stageProgress[ch.id] || 0;
-    const cx    = MAP_W / 2;
-    const areaT = 10;
-    const areaH = (H - 62) - areaT - 20;
+    const cx    = W / 2;
+    const areaT = 20;
+    // パネルが出る分を考慮して上部にノードを配置
+    const areaH = (H - 62) - areaT - this.PANEL_H - 20;
 
     const NP = [
-      { x: cx + MAP_W * 0.07,  y: areaT + areaH * 0.88 },
-      { x: cx - MAP_W * 0.13,  y: areaT + areaH * 0.66 },
-      { x: cx + MAP_W * 0.09,  y: areaT + areaH * 0.44 },
-      { x: cx - MAP_W * 0.11,  y: areaT + areaH * 0.22 },
-      { x: cx,                 y: areaT + areaH * 0.04 },
+      { x: cx + 80,  y: areaT + areaH * 0.88 },
+      { x: cx - 70,  y: areaT + areaH * 0.66 },
+      { x: cx + 60,  y: areaT + areaH * 0.44 },
+      { x: cx - 80,  y: areaT + areaH * 0.22 },
+      { x: cx,       y: areaT + areaH * 0.04 },
     ];
 
     // 接続線
     for (let s = 0; s < 4; s++) {
       const a = NP[s], b = NP[s + 1];
-      g().lineStyle(2, s < prog - 1 ? 0xb89620 : 0x3a1a5a, s < prog - 1 ? 0.9 : 0.35)
+      g().lineStyle(2.5, s < prog - 1 ? 0xb89620 : 0x3a1a5a, s < prog - 1 ? 0.9 : 0.4)
          .lineBetween(a.x, a.y, b.x, b.y);
     }
 
@@ -355,11 +373,11 @@ class StoryScene extends Phaser.Scene {
       const isLock  = s > prog;
       const isBoss  = s === 4;
       const battle  = ch.battles[s];
-      const nodeR   = 18;
+      const nodeR   = 22;
       const ng      = g();
 
       if (isBoss) {
-        const R   = nodeR + 2;
+        const R   = nodeR + 4;
         const pts = [
           { x: pos.x,     y: pos.y - R },
           { x: pos.x + R, y: pos.y     },
@@ -368,10 +386,10 @@ class StoryScene extends Phaser.Scene {
         ];
         ng.fillStyle(done ? 0x8b2020 : current ? 0x3a0808 : 0x181818, 1)
           .fillPoints(pts, true);
-        ng.lineStyle(1.5, done ? 0xff6644 : current ? 0xdd2200 : 0x333333, 1)
+        ng.lineStyle(2, done ? 0xff6644 : current ? 0xdd2200 : 0x333333, 1)
           .strokePoints(pts, true);
         if (current) {
-          ng.lineStyle(4, 0xdd2200, 0.15)
+          ng.lineStyle(5, 0xdd2200, 0.18)
             .strokePoints(pts.map(p => ({
               x: pos.x + (p.x - pos.x) * 1.5, y: pos.y + (p.y - pos.y) * 1.5,
             })), true);
@@ -379,29 +397,29 @@ class StoryScene extends Phaser.Scene {
       } else {
         ng.fillStyle(done ? 0xb89620 : current ? 0x2a0c50 : 0x181818, 1)
           .fillCircle(pos.x, pos.y, nodeR);
-        ng.lineStyle(done ? 2 : current ? 2 : 1,
+        ng.lineStyle(done ? 2.5 : current ? 2.5 : 1,
             done ? 0xffdd44 : current ? 0xcc88ff : 0x2e2e2e, 1)
           .strokeCircle(pos.x, pos.y, nodeR);
         if (current) {
-          ng.lineStyle(4, 0xcc88ff, 0.2).strokeCircle(pos.x, pos.y, nodeR + 6);
+          ng.lineStyle(5, 0xcc88ff, 0.22).strokeCircle(pos.x, pos.y, nodeR + 8);
         }
       }
 
       t(pos.x, pos.y, isBoss ? '👹' : done ? '✓' : `${s + 1}`, {
         fontFamily: 'serif',
-        fontSize: isBoss ? '12px' : done ? '14px' : '12px',
-        color: done ? '#1a0a00' : current ? '#e8c87a' : '#333333',
+        fontSize: isBoss ? '14px' : done ? '16px' : '14px',
+        color: done ? '#1a0a00' : current ? '#e8c87a' : '#444444',
       }).setOrigin(0.5);
 
       if (isBoss) {
-        t(pos.x, pos.y + nodeR + 8, 'BOSS', {
-          fontFamily: 'monospace', fontSize: '7px',
-          color: done ? '#ff6644' : current ? '#dd2200' : '#333333',
+        t(pos.x, pos.y + nodeR + 10, 'BOSS', {
+          fontFamily: 'monospace', fontSize: '8px',
+          color: done ? '#ff6644' : current ? '#dd2200' : '#444444',
         }).setOrigin(0.5);
       }
 
       if (!isLock) {
-        const hit = r(pos.x, pos.y, (nodeR + 8) * 2, (nodeR + 8) * 2, 0, 0)
+        const hit = r(pos.x, pos.y, (nodeR + 10) * 2, (nodeR + 10) * 2, 0, 0)
           .setInteractive({ useHandCursor: true });
         hit.on('pointerover', () => ng.setAlpha(0.75));
         hit.on('pointerout',  () => ng.setAlpha(1.0));
@@ -419,12 +437,9 @@ class StoryScene extends Phaser.Scene {
   _showChapters() {
     this._mode = 'chapter';
     this.chContainer.setVisible(true);
-    this.stagePanelBg.setVisible(false);
     this.stageMapCont.setVisible(false);
-    const panelItems = [this._pHint, this._pChNum, this._pTitle,
-      this._pEnemyLbl, this._pEnemy, this._pRewardLbl, this._pReward, this._pBtn];
-    panelItems.forEach(o => o.setVisible(false));
-    this._pDivG.clear();
+    this._panelCont.setVisible(false);
+    this._panelCont.y = this.H;
     this.headerTitle.setText('〜 ストーリー 〜');
     this.backBtn.setText('← 戻る');
   }
@@ -432,19 +447,14 @@ class StoryScene extends Phaser.Scene {
   _showStages(ch) {
     this._mode = 'stage';
     this.chContainer.setVisible(false);
-    this.stagePanelBg.setVisible(true);
     this.stageMapCont.setVisible(true).removeAll(true);
+    this._panelCont.setVisible(false);
+    this._panelCont.y = this.H;
 
     this.headerTitle.setText(ch.title.replace(/^第.章：/, ''));
     this.backBtn.setText('← 章一覧');
 
-    // ノード描画
     this._drawStageNodes(ch);
-
-    // 最初のクリア可能ステージを自動選択
-    const prog = GameState.player.stageProgress[ch.id] || 0;
-    const si   = Math.min(prog, 4);
-    this._updateStagePanel(ch, si, ch.battles[si]);
   }
 
   // ============================================================
