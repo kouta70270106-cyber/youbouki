@@ -127,13 +127,19 @@ class StoryScene extends Phaser.Scene {
     } else {
       const imgKey = `ch_bg_${ch.id}`;
       if (this.textures.exists(imgKey)) {
-        // 章背景画像をカードサイズに合わせて表示
+        // 画像の中央部分だけを切り取って歪まずに表示
+        const tex = this.textures.get(imgKey).source[0];
+        const texW = tex.width, texH = tex.height;
+        const scale = cW / texW;
+        const cropH = Math.min(texH, Math.round(cH / scale));
+        const cropY = Math.round((texH - cropH) / 2);
         const img = this.add.image(bx + cW / 2, cy, imgKey)
+          .setCrop(0, cropY, texW, cropH)
           .setDisplaySize(cW, cH)
-          .setAlpha(0.7);
+          .setAlpha(0.75);
         C.add(img);
         // 暗いオーバーレイで視認性を確保
-        bg.fillStyle(0x060214, 0.38).fillRoundedRect(bx, by, cW, cH, 8);
+        bg.fillStyle(0x060214, 0.35).fillRoundedRect(bx, by, cW, cH, 8);
       } else {
         // 画像なし: 従来のアクセントカラー
         bg.fillStyle(accent, 1).fillRoundedRect(bx, by, cW, cH, 8);
@@ -318,13 +324,18 @@ class StoryScene extends Phaser.Scene {
     const imgKey = `ch_bg_${ch.id}`;
     if (this.textures.exists(imgKey)) {
       const mapH = H - 62;
+      // 高さに合わせてスケール（横長画像を縦長エリアに歪みなく表示）
+      // 幅がはみ出る分はジオメトリマスクでクリップされる
+      const tex = this.textures.get(imgKey).source[0];
+      const dispH = mapH;
+      const dispW = Math.round(dispH * (tex.width / tex.height));
       const img = this.add.image(MAP_W / 2, mapH / 2, imgKey)
-        .setDisplaySize(MAP_W, mapH)
-        .setAlpha(0.75);
+        .setDisplaySize(dispW, dispH)
+        .setAlpha(0.8);
       C.add(img);
       // 薄いオーバーレイでノードを見やすく
       const overlay = this.add.graphics();
-      overlay.fillStyle(0x020010, 0.28).fillRect(0, 0, MAP_W, mapH);
+      overlay.fillStyle(0x020010, 0.25).fillRect(0, 0, MAP_W, mapH);
       C.add(overlay);
     }
 
