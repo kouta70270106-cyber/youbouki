@@ -10,6 +10,7 @@ const GameState = {
     jureikon: 0,
     deck: [],
     homeYokaiIdx: 0,
+    profileYokaiId: null,
   },
 
   // ストーリー進行
@@ -37,6 +38,7 @@ const GameState = {
     if (!this.player.clearedBattles) this.player.clearedBattles = [];
     if (this.player.jureikon === undefined) this.player.jureikon = 0;
     if (this.player.homeYokaiIdx === undefined) this.player.homeYokaiIdx = 0;
+    if (!('profileYokaiId' in this.player)) this.player.profileYokaiId = null;
     return true;
   },
 

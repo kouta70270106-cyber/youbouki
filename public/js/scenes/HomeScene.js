@@ -61,7 +61,7 @@ class HomeScene extends Phaser.Scene {
     // ヘッダー仕切り線
     this.add.graphics().lineStyle(1, 0x2a1040, 0.4).lineBetween(PAD, 46, W - PAD, 46);
 
-    // アバター円
+    // アバター円（クリックでプロフィールへ）
     const playerName = GameState.player.name || '？';
     const avaX = PAD + 17, avaY = 74;
     const avaG = this.add.graphics();
@@ -69,11 +69,25 @@ class HomeScene extends Phaser.Scene {
     avaG.fillCircle(avaX, avaY, 17);
     avaG.lineStyle(1.5, 0xe7c065, 0.7);
     avaG.strokeCircle(avaX, avaY, 17);
-    this.add.text(avaX, avaY, playerName[0], {
-      fontFamily: '"Shippori Mincho B1", serif',
-      fontSize: '16px',
-      color: '#ecd089',
-    }).setOrigin(0.5);
+    const profileId = GameState.player.profileYokaiId;
+    const sprKey    = profileId ? CARD_SPRITE[profileId] : null;
+    if (sprKey && this.textures.exists(sprKey)) {
+      const spr = this.add.image(avaX, avaY, sprKey).setOrigin(0.5);
+      const maxPx = 15 * 2 * 0.75;
+      const sw = spr.width  || 1;
+      const sh = spr.height || 1;
+      spr.setScale(Math.min(maxPx / sw, maxPx / sh));
+    } else {
+      this.add.text(avaX, avaY, playerName[0], {
+        fontFamily: '"Shippori Mincho B1", serif',
+        fontSize: '16px',
+        color: '#ecd089',
+      }).setOrigin(0.5);
+    }
+    const avaHit = this.add.circle(avaX, avaY, 17, 0, 0).setInteractive({ useHandCursor: true });
+    avaHit.on('pointerover', () => { avaG.clear(); avaG.fillStyle(0x3d1f4a, 1); avaG.fillCircle(avaX, avaY, 17); avaG.lineStyle(1.5, 0xffd700, 1); avaG.strokeCircle(avaX, avaY, 17); });
+    avaHit.on('pointerout',  () => { avaG.clear(); avaG.fillStyle(0x2c1533, 1); avaG.fillCircle(avaX, avaY, 17); avaG.lineStyle(1.5, 0xe7c065, 0.7); avaG.strokeCircle(avaX, avaY, 17); });
+    avaHit.on('pointerdown', () => { SE.playSE('click'); this.scene.start('ProfileScene'); });
 
     // プレイヤー名
     const nameX = avaX + 22;
