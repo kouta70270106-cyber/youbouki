@@ -10,6 +10,7 @@ const GameState = {
     jureikon: 0,
     deck: [],
     homeYokaiIdx: 0,
+    homeYokaiIds: [],
     profileYokaiId: null,
   },
 
@@ -38,6 +39,7 @@ const GameState = {
     if (!this.player.clearedBattles) this.player.clearedBattles = [];
     if (this.player.jureikon === undefined) this.player.jureikon = 0;
     if (this.player.homeYokaiIdx === undefined) this.player.homeYokaiIdx = 0;
+    if (!this.player.homeYokaiIds) this.player.homeYokaiIds = [];
     if (!('profileYokaiId' in this.player)) this.player.profileYokaiId = null;
     return true;
   },

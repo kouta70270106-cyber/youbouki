@@ -3,7 +3,7 @@ class StoryScene extends Phaser.Scene {
   constructor() { super('StoryScene'); }
 
   preload() {
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 20; i++) {
       this.load.image(`ch_bg_${i}`, `images/chapters/ch${i}.png`);
     }
   }
@@ -467,14 +467,13 @@ class StoryScene extends Phaser.Scene {
       backgroundColor: '#110022', padding: { x: 6, y: 3 },
     }).setOrigin(1, 0).setDepth(20).setInteractive({ useHandCursor: true });
     btn.on('pointerdown', () => {
-      const all = ['kappa','tengu','zashiki','tanuki','kitsune','karakasa','noppera',
-        'rokurokubi','nurikabe','sunakake','chochin','amefuri','ittan','wanyudo',
-        'yuki_onna','oni','nekomata','yamanba','umibouzu','amanojaku','kasha',
-        'tsuchigumo','bakekujira','nue','kyubi','dai_tengu','shuten_doji','tamamo',
-        'ryujin','susanoo'];
+      const all = D.cards.map(c => c.id);
+      const progress = {};
+      for (let i = 1; i <= 19; i++) progress[i] = 5;
+      progress[20] = 4;
       GameState.player.unlockedCards     = all;
-      GameState.player.completedChapters = [1,2,3,4,5,6,7,8,9];
-      GameState.player.stageProgress     = {1:5,2:5,3:5,4:5,5:5,6:5,7:5,8:5,9:5,10:4};
+      GameState.player.completedChapters = Array.from({length: 19}, (_, i) => i + 1);
+      GameState.player.stageProgress     = progress;
       GameState.save();
       this.scene.restart();
     });

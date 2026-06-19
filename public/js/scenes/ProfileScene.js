@@ -137,12 +137,12 @@ class ProfileScene extends Phaser.Scene {
     const jureikon     = GameState.player.jureikon || 0;
 
     const items = [
-      { label: '所持カード',     value: `${ownedKinds} / 30 種`, color: '#7fc9a6' },
-      { label: 'クリア済み章数', value: `${clearedChaps} / 10 章`, color: '#b98fe0' },
+      { label: '所持カード',     value: `${ownedKinds} / 41 種`, color: '#7fc9a6' },
+      { label: 'クリア済み章数', value: `${clearedChaps} / 20 章`, color: '#b98fe0' },
       { label: '呪魂',          value: `${jureikon}`,            color: '#cc88ff' },
     ];
 
-    const rowH  = 64;
+    const rowH  = 58;
     const rowY0 = 378;
     const PAD   = 24;
 
@@ -167,6 +167,45 @@ class ProfileScene extends Phaser.Scene {
         fontSize: '15px',
         color: item.color,
       }).setOrigin(1, 0.5);
+    });
+
+    // ── ホーム妖怪設定ボタン ──
+    const btnY   = rowY0 + items.length * rowH + 6;
+    const accHex = 0xe7c065;
+
+    const btnBg = this.add.graphics();
+    const drawBtn = (hover = false) => {
+      btnBg.clear();
+      btnBg.fillStyle(hover ? 0x1a0d30 : 0x0e0820, 0.9);
+      btnBg.fillRoundedRect(PAD, btnY, W - PAD * 2, 52, 8);
+      btnBg.lineStyle(1, accHex, hover ? 0.7 : 0.35);
+      btnBg.strokeRoundedRect(PAD, btnY, W - PAD * 2, 52, 8);
+    };
+    drawBtn();
+
+    this.add.text(PAD + 18, btnY + 26, 'ホーム妖怪設定', {
+      fontFamily: '"Shippori Mincho B1", serif',
+      fontSize: '14px',
+      color: '#e7c065',
+    }).setOrigin(0, 0.5);
+
+    // 現在の選択数を表示
+    const homeIds  = GameState.player.homeYokaiIds || [];
+    const countTxt = homeIds.length > 0 ? `${homeIds.length} / 5 体` : '未設定';
+    this.add.text(W - PAD - 18, btnY + 26, countTxt + ' ▶', {
+      fontFamily: 'Courier New, monospace',
+      fontSize: '13px',
+      color: homeIds.length > 0 ? '#7fc9a6' : '#554466',
+    }).setOrigin(1, 0.5);
+
+    const btnHit = this.add.rectangle(W / 2, btnY + 26, W - PAD * 2, 52, 0, 0)
+      .setInteractive({ useHandCursor: true });
+    btnHit.on('pointerover', () => drawBtn(true));
+    btnHit.on('pointerout',  () => drawBtn(false));
+    btnHit.on('pointerdown', () => {
+      SE.playSE('click');
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('HomeYokaiSelectScene'));
     });
 
     this.cameras.main.fadeIn(300, 0, 0, 0);

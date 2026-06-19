@@ -702,8 +702,8 @@ class BattleScene extends Phaser.Scene {
     // 召喚アニメーション → 完了後にフィールドへ配置
     SE.playSE('summon');
     this.playSummonAnim(from.x, from.y, to.x, to.y, sprKey, () => {
-      const hasTaunt = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(cardData.id);
-      const hasPierce = ['noppera','ittan'].includes(cardData.id);
+      const hasTaunt = ['karakasa','nurikabe','umibouzu','tsuchigumo','tonkaraton','denchu_otoko','kunekune','hasshaku','jinmen_sakana'].includes(cardData.id);
+      const hasPierce = ['noppera','ittan','turbo_baba','kubi_nashi','jinmenken'].includes(cardData.id);
       s.player.field[slotIndex] = { card: cardData, hp: cardData.hp, frozen: false, attacked: false, taunt: hasTaunt, pierce: hasPierce, resurrected: false };
       this.applyBattlecry(cardData, 'player');
       this.message = `${cardData.name} を召喚！`;
@@ -935,6 +935,51 @@ class BattleScene extends Phaser.Scene {
           if (mob) mob.hp = mob.card.hp;
         });
         break;
+      // ===== Arc2 近代妖怪 =====
+      case 'turbo_baba':
+        s[opp].souls = Math.max(0, s[opp].souls - 2);
+        break;
+      case 'tonkaraton':
+        this.drawCard(who);
+        break;
+      case 'aka_manto': {
+        const roll = Math.random() < 0.5;
+        if (roll) {
+          const t = s[opp].field.find(Boolean);
+          if (t) { t.hp -= 4; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+        } else {
+          s[who].field.forEach(mob => {
+            if (mob) mob.hp = Math.min(mob.card.hp, mob.hp + 2);
+          });
+        }
+        break;
+      }
+      case 'jinmenken': {
+        const t = s[opp].field.find(Boolean);
+        if (t) { t.hp -= 2; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+        break;
+      }
+      case 'kubi_nashi':
+        s[opp].souls = Math.max(0, s[opp].souls - 2);
+        break;
+      case 'hasshaku':
+        s[opp].field.forEach(mob => {
+          if (mob) mob.card = { ...mob.card, atk: Math.max(0, mob.card.atk - 2) };
+        });
+        break;
+      case 'sarasara':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 3; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'ushi_no_kubi':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 3; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        s[opp].field.forEach(mob => {
+          if (mob) mob.card = { ...mob.card, atk: Math.max(0, mob.card.atk - 2) };
+        });
+        break;
     }
   }
 
@@ -971,6 +1016,39 @@ class BattleScene extends Phaser.Scene {
         break;
       case 'ryujin':
         s[opp].souls = Math.max(0, s[opp].souls - 4);
+        break;
+      // ===== Arc2 近代妖怪 =====
+      case 'tonkaraton': {
+        const t = s[opp].field.find(Boolean);
+        if (t) { t.hp -= 1; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+        break;
+      }
+      case 'denchu_otoko':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 2; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'jinmen_sakana':
+        this.drawCard(who);
+        break;
+      case 'kunekune':
+        s[opp].field.forEach((mob, i) => {
+          if (mob) { mob.hp -= 2; if (mob.hp <= 0) this.killMob(opp, i); }
+        });
+        break;
+      case 'sarasara':
+        ['player','enemy'].forEach(side => {
+          s[side].field.forEach((mob, i) => {
+            if (mob) { mob.hp -= 4; if (mob.hp <= 0) this.killMob(side, i); }
+          });
+        });
+        break;
+      case 'ushi_no_kubi':
+        ['player','enemy'].forEach(side => {
+          s[side].field.forEach((mob, i) => {
+            if (mob) { mob.hp -= 5; if (mob.hp <= 0) this.killMob(side, i); }
+          });
+        });
         break;
     }
   }
@@ -1016,6 +1094,11 @@ class BattleScene extends Phaser.Scene {
       case 'kyubi':
         s[opp].souls = Math.max(0, s[opp].souls - 1);
         break;
+      case 'jinmenken': {
+        const t = targetIndex >= 0 ? s[opp].field[targetIndex] : s[opp].field.find(Boolean);
+        if (t) { t.hp -= 1; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+        break;
+      }
     }
   }
 
@@ -1057,6 +1140,27 @@ class BattleScene extends Phaser.Scene {
         case 'shuten_doji':
           mob.card = { ...mob.card, atk: mob.card.atk + 1 };
           break;
+        // ===== Arc2 近代妖怪 =====
+        case 'denchu_otoko': {
+          const t = s[opp].field.find(Boolean);
+          if (t) t.card = { ...t.card, atk: Math.max(0, t.card.atk - 1) };
+          break;
+        }
+        case 'jinmen_sakana': {
+          const t = s[opp].field.find(Boolean);
+          if (t) { t.hp -= 1; if (t.hp <= 0) this.killMob(opp, s[opp].field.indexOf(t)); }
+          break;
+        }
+        case 'kunekune':
+          s[opp].field.forEach(m => {
+            if (m) m.card = { ...m.card, atk: Math.max(0, m.card.atk - 1) };
+          });
+          break;
+        case 'hasshaku':
+          s[opp].field.forEach((m, i) => {
+            if (m) { m.hp -= 1; if (m.hp <= 0) this.killMob(opp, i); }
+          });
+          break;
       }
     });
   }
@@ -1097,8 +1201,8 @@ class BattleScene extends Phaser.Scene {
       if (idx === -1) continue;
       s.energy.current -= card.cost;
       s.enemy.hand.splice(idx, 1);
-      const hasTaunt  = ['karakasa','nurikabe','umibouzu','tsuchigumo'].includes(card.id);
-      const hasPierce = ['noppera','ittan'].includes(card.id);
+      const hasTaunt  = ['karakasa','nurikabe','umibouzu','tsuchigumo','tonkaraton','denchu_otoko','kunekune','hasshaku','jinmen_sakana'].includes(card.id);
+      const hasPierce = ['noppera','ittan','turbo_baba','kubi_nashi','jinmenken'].includes(card.id);
       s.enemy.field[slot] = { card, hp: card.hp, frozen: false, attacked: false, taunt: hasTaunt, pierce: hasPierce, resurrected: false };
       this.applyBattlecry(card, 'enemy');
     }

@@ -159,11 +159,8 @@ class HomeScene extends Phaser.Scene {
     this._showcaseCX = 240;
     this._showcaseCY = 308;
 
-    this._ownedIds  = [...new Set(GameState.player.unlockedCards || [])];
-    this._yokaiIdx  = Math.min(
-      GameState.player.homeYokaiIdx || 0,
-      Math.max(0, this._ownedIds.length - 1)
-    );
+    this._allIds   = (GameState.player.homeYokaiIds || []).filter(id => D.cards.find(c => c.id === id));
+    this._yokaiIdx = Math.min(GameState.player.homeYokaiIdx || 0, Math.max(0, this._allIds.length - 1));
     this._yokaiObjs = [];
     this._renderYokai();
 
@@ -256,10 +253,10 @@ class HomeScene extends Phaser.Scene {
 
     const cx    = this._showcaseCX;
     const cy    = this._showcaseCY;
-    const owned = this._ownedIds;
+    const all = this._allIds;
 
-    if (owned.length === 0) {
-      track(this.add.text(cx, cy, 'ストーリーを進めて\n妖怪を入手しよう', {
+    if (all.length === 0) {
+      track(this.add.text(cx, cy, 'プロフィールから\n妖怪を設定しよう', {
         fontFamily: '"Shippori Mincho B1", serif',
         fontSize: '13px',
         color: '#443355',
@@ -269,8 +266,9 @@ class HomeScene extends Phaser.Scene {
       return;
     }
 
-    const id   = owned[this._yokaiIdx];
+    const id   = all[this._yokaiIdx];
     const card = D.cards.find(c => c.id === id);
+    const isOwned = true;
     const rar  = card ? D.rarity[card.rarity] : null;
     const sprKey = CARD_SPRITE[id];
 
@@ -327,7 +325,7 @@ class HomeScene extends Phaser.Scene {
       const spr = track(this.add.image(cx, cy - 4, sprKey).setOrigin(0.5));
       const maxPx = 82 * 2 * 0.92;
       const sc = Math.min(maxPx / spr.width, maxPx / spr.height);
-      spr.setScale(sc);
+      spr.setScale(sc).setAlpha(isOwned ? 1 : 0.35);
       this.tweens.add({
         targets: spr, y: spr.y - 8, duration: 2200,
         ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
@@ -339,7 +337,7 @@ class HomeScene extends Phaser.Scene {
       track(this.add.text(cx, 428, card.name, {
         fontFamily: '"Shippori Mincho B1", serif',
         fontSize: '22px',
-        color: '#ece3d2',
+        color: isOwned ? '#ece3d2' : '#554466',
         stroke: '#060210',
         strokeThickness: 4,
       }).setOrigin(0.5));
@@ -360,7 +358,7 @@ class HomeScene extends Phaser.Scene {
     }
 
     // 8. ページャ
-    if (owned.length > 1) {
+    if (all.length > 1) {
       const arStyle = { fontFamily: 'serif', fontSize: '20px', color: '#7a5ba8' };
 
       const prevBtn = track(this.add.text(cx - 64, 490, '◀', arStyle)
@@ -369,7 +367,7 @@ class HomeScene extends Phaser.Scene {
       prevBtn.on('pointerout',  () => prevBtn.setColor('#7a5ba8'));
       prevBtn.on('pointerdown', () => {
         SE.playSE('click');
-        this._yokaiIdx = (this._yokaiIdx - 1 + owned.length) % owned.length;
+        this._yokaiIdx = (this._yokaiIdx - 1 + all.length) % all.length;
         GameState.player.homeYokaiIdx = this._yokaiIdx;
         GameState.save();
         this._renderYokai();
@@ -381,21 +379,26 @@ class HomeScene extends Phaser.Scene {
       nextBtn.on('pointerout',  () => nextBtn.setColor('#7a5ba8'));
       nextBtn.on('pointerdown', () => {
         SE.playSE('click');
-        this._yokaiIdx = (this._yokaiIdx + 1) % owned.length;
+        this._yokaiIdx = (this._yokaiIdx + 1) % all.length;
         GameState.player.homeYokaiIdx = this._yokaiIdx;
         GameState.save();
         this._renderYokai();
       });
 
-      track(this.add.text(cx, 490, `${this._yokaiIdx + 1} / ${owned.length}`, {
+      track(this.add.text(cx, 490, `${this._yokaiIdx + 1} / ${all.length}`, {
         fontFamily: 'Courier New, monospace',
         fontSize: '12px',
         color: '#9a8fb0',
       }).setOrigin(0.5));
-    } else if (owned.length === 1) {
-      track(this.add.text(cx, 490, '✦', {
-        fontFamily: 'serif', fontSize: '14px', color: '#7a5ba8',
-      }).setOrigin(0.5));
+
+      // 未入手ラベル
+      if (!isOwned) {
+        track(this.add.text(cx, 510, '未入手', {
+          fontFamily: '"Shippori Mincho B1", serif',
+          fontSize: '11px',
+          color: '#554466',
+        }).setOrigin(0.5));
+      }
     }
   }
 }

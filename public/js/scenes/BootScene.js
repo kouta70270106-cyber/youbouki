@@ -7,7 +7,9 @@ class BootScene extends Phaser.Scene {
       'noppera','rokurokubi','nurikabe','sunakake','chochin','amefuri',
       'ittan','wanyudo','yuki_onna','oni','nekomata','yamanba',
       'umibouzu','amanojaku','kasha','tsuchigumo','bakekujira',
-      'nue','kyubi','dai_tengu','shuten_doji','tamamo','ryujin','susanoo'
+      'nue','kyubi','dai_tengu','shuten_doji','tamamo','ryujin','susanoo',
+      'turbo_baba','tonkaraton','aka_manto','jinmenken','kubi_nashi',
+      'denchu_otoko','kunekune','hasshaku','jinmen_sakana','sarasara','ushi_no_kubi'
     ];
     ALL_IDS.forEach(id => {
       this.load.image(`img_${id}`,   `images/cards/${id}.png`);

@@ -8,8 +8,8 @@ class GachaScene extends Phaser.Scene {
     this.W = W; this.H = H;
 
     // ガチャ対象カード
-    this._rarePool = ['nue','kyubi','dai_tengu','shuten_doji','tamamo'];
-    this._legendPool = ['ryujin','susanoo'];
+    this._rarePool = ['nue','kyubi','dai_tengu','shuten_doji','tamamo','kunekune','hasshaku','jinmen_sakana'];
+    this._legendPool = ['ryujin','susanoo','sarasara','ushi_no_kubi'];
 
     this._drawBg();
     this._drawHeader();
