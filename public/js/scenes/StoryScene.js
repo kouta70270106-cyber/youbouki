@@ -461,6 +461,7 @@ class StoryScene extends Phaser.Scene {
   // DEV
   // ============================================================
   _buildDev() {
+    if (!location.hostname.includes('localhost')) return;
     const W = this.W;
     const btn = this.add.text(W - 8, 8, '[DEV]', {
       fontFamily: 'monospace', fontSize: '11px', color: '#443355',

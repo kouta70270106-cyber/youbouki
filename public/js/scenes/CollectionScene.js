@@ -52,7 +52,8 @@ class CollectionScene extends Phaser.Scene {
       this.scene.start('HomeScene');
     });
 
-    // 開発者ボタン（全表示トグル、画面右上固定）
+    // 開発者ボタン（localhost のみ表示）
+    if (!location.hostname.includes('localhost')) return;
     const devBtn = this.add.text(W - 8, 8, '[DEV]', {
       fontFamily: 'monospace', fontSize: '11px', color: '#443355',
       backgroundColor: '#1a1a2a', padding: { x: 4, y: 2 },
