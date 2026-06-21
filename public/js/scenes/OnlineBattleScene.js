@@ -48,7 +48,7 @@ class OnlineBattleScene extends BattleScene {
     this.drawBg();
 
     if (this.playerIndex === 0) {
-      // HOST: 先攻でターン開始（初回はカードドローなし、すでに5枚ある）
+      // HOST: 先攻でターン開始
       this._startMyTurn(false);
     } else {
       // GUEST: 相手のターンを待つ
@@ -72,6 +72,10 @@ class OnlineBattleScene extends BattleScene {
       this.state.enemy.souls  = action.mySouls;
       this.state.player.field = action.yourField;
       this.state.player.souls = action.yourSouls;
+
+      // 相手の手札枚数を同期（カード裏面表示用）
+      const oppHandCount = action.myHandCount || 0;
+      this.state.enemy.hand = Array(oppHandCount).fill({ dummy: true });
 
       // 相手の手札捨て効果（ローカルで適用）
       for (let i = 0; i < (action.handDiscards || 0); i++) {
@@ -120,7 +124,7 @@ class OnlineBattleScene extends BattleScene {
     });
   }
 
-  // 勝敗判定（battleEnded を立ててから endBattle を呼ぶ）
+  // ===== 勝敗判定 =====
   _checkWinSilent() {
     const s = this.state;
     if (s.enemy.souls <= 0) {
@@ -150,6 +154,7 @@ class OnlineBattleScene extends BattleScene {
       mySouls:      this.state.player.souls,
       yourField:    this.state.enemy.field,
       yourSouls:    this.state.enemy.souls,
+      myHandCount:  this.state.player.hand.length,
       handDiscards: this._pendingHandDiscards,
     };
     this._pendingHandDiscards = 0;
@@ -164,7 +169,7 @@ class OnlineBattleScene extends BattleScene {
   // ===== AIターンは使わない =====
   enemyTurn() {}
 
-  // ===== 手札捨て効果を追跡するために applyBattlecry をラップ =====
+  // ===== 手札捨て効果を追跡 =====
   applyBattlecry(card, who) {
     if (who === 'player') {
       if (card.id === 'noppera' || card.id === 'nue') {
@@ -173,8 +178,69 @@ class OnlineBattleScene extends BattleScene {
         this._pendingHandDiscards += 2;
       }
     }
-    // super を呼ぶ（s.enemy.hand は空なので discard は no-op。他の効果は正常に処理される）
     super.applyBattlecry(card, who);
+  }
+
+  // ===== render オーバーライド（オンライン専用HUD追加） =====
+  render() {
+    super.render();
+    this._renderOnlineHUD();
+  }
+
+  _renderOnlineHUD() {
+    if (!this.uiLayer) return;
+    const W = this.W, H = this.H;
+
+    // 先攻/後攻バッジ（画面左中央）
+    const badge = this.playerIndex === 0 ? '先攻' : '後攻';
+    const badgeCol = this.playerIndex === 0 ? '#ffaa22' : '#88aaff';
+    const badgeTxt = this.add.text(8, H / 2 - 22, badge, {
+      fontSize: '11px', color: badgeCol, fontFamily: 'serif',
+      backgroundColor: '#1a0a30', padding: { x: 4, y: 2 },
+    }).setOrigin(0, 0.5);
+    this.uiLayer.add(badgeTxt);
+
+    // ターン状態インジケーター（左中央・バッジの下）
+    const isMyTurn = this.state.turn === 'player';
+    const turnTxt = this.add.text(8, H / 2 + 2, isMyTurn ? '▶ 自分' : '… 相手', {
+      fontSize: '11px',
+      color: isMyTurn ? '#44ff88' : '#aa88cc',
+      fontFamily: 'serif',
+      backgroundColor: '#0a0818',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0, 0.5);
+    this.uiLayer.add(turnTxt);
+
+    // 自分のデッキ残枚数（右中央）
+    const deckTxt = this.add.text(W - 8, H / 2 - 10, `札 ${this.state.player.deck.length}`, {
+      fontSize: '11px', color: '#8888bb', fontFamily: 'serif',
+    }).setOrigin(1, 0.5);
+    this.uiLayer.add(deckTxt);
+
+    // 相手の手札（カード裏面を上部に表示）
+    const enemyHandCount = this.state.enemy.hand.length;
+    if (enemyHandCount > 0) {
+      const cardW = 28, cardH = 38, gap = 3;
+      const totalW = enemyHandCount * (cardW + gap) - gap;
+      const startX = W / 2 - totalW / 2;
+      const cardY = 90;
+
+      for (let i = 0; i < enemyHandCount; i++) {
+        const x = startX + i * (cardW + gap) + cardW / 2;
+        const back = this.add.rectangle(x, cardY, cardW, cardH, 0x1a0a30, 1)
+          .setStrokeStyle(1, 0x6644aa);
+        const lbl = this.add.text(x, cardY, '妖', {
+          fontSize: '11px', color: '#4422aa', fontFamily: 'serif',
+        }).setOrigin(0.5);
+        this.uiLayer.add([back, lbl]);
+      }
+
+      // 手札枚数ラベル
+      const countLbl = this.add.text(W / 2, 115, `手札 ${enemyHandCount}枚`, {
+        fontSize: '10px', color: '#776699', fontFamily: 'serif',
+      }).setOrigin(0.5);
+      this.uiLayer.add(countLbl);
+    }
   }
 
   // ===== 戦闘終了（章クリア報酬なし） =====
