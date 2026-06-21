@@ -133,6 +133,19 @@ class TitleScene extends Phaser.Scene {
       this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('HomeScene'));
     });
 
+    // ── 新しく始めるボタン ──
+    const newBtn = this.add.text(W / 2, H * 0.88, '新しく始める', {
+      fontFamily: '"Shippori Mincho B1", serif',
+      fontSize: '14px',
+      color: '#886688',
+    }).setOrigin(0.5).setAlpha(0).setInteractive({ useHandCursor: true });
+    newBtn.on('pointerover', () => newBtn.setColor('#cc88cc'));
+    newBtn.on('pointerout',  () => newBtn.setColor('#886688'));
+    newBtn.on('pointerdown', () => {
+      SE.playSE('click');
+      this._showResetConfirm(W, H);
+    });
+
     // ── バージョン ──
     this.add.text(W - 10, H - 10, 'v0.1.0', {
       fontFamily: 'Courier New, monospace',
@@ -156,7 +169,58 @@ class TitleScene extends Phaser.Scene {
           });
         },
       });
+      this.tweens.add({ targets: newBtn, alpha: 1, duration: 700, ease: 'Power2', delay: 200 });
     });
+  }
+
+  _showResetConfirm(W, H) {
+    // 既に開いていたら無視
+    if (this._confirmModal) return;
+
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.70).setDepth(10).setInteractive();
+    const panel   = this.add.graphics().setDepth(11);
+    const pW = 280, pH = 180;
+    panel.fillStyle(0x1a0a30, 1);
+    panel.fillRoundedRect(W / 2 - pW / 2, H / 2 - pH / 2, pW, pH, 10);
+    panel.lineStyle(1.5, 0x884488, 0.9);
+    panel.strokeRoundedRect(W / 2 - pW / 2, H / 2 - pH / 2, pW, pH, 10);
+
+    const msg = this.add.text(W / 2, H / 2 - 44, 'セーブデータを削除して\n最初から始めますか？', {
+      fontFamily: '"Shippori Mincho B1", serif',
+      fontSize: '14px', color: '#c8b8e8', align: 'center', lineSpacing: 4,
+    }).setOrigin(0.5).setDepth(12);
+
+    // 「はい」ボタン
+    const yesBtn = this.add.text(W / 2 - 54, H / 2 + 40, 'はい', {
+      fontFamily: '"Yuji Syuku", serif', fontSize: '16px', color: '#ff8888',
+      backgroundColor: '#2a0a0a', padding: { x: 18, y: 8 },
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    yesBtn.on('pointerover', () => yesBtn.setColor('#ffbbbb'));
+    yesBtn.on('pointerout',  () => yesBtn.setColor('#ff8888'));
+    yesBtn.on('pointerdown', () => {
+      SE.playSE('click');
+      GameState.reset();
+      this._closeConfirm();
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('BootScene'));
+    });
+
+    // 「いいえ」ボタン
+    const noBtn = this.add.text(W / 2 + 54, H / 2 + 40, 'いいえ', {
+      fontFamily: '"Yuji Syuku", serif', fontSize: '16px', color: '#b89adc',
+      backgroundColor: '#1a0a40', padding: { x: 14, y: 8 },
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    noBtn.on('pointerover', () => noBtn.setColor('#e8c87a'));
+    noBtn.on('pointerout',  () => noBtn.setColor('#b89adc'));
+    noBtn.on('pointerdown', () => { SE.playSE('click'); this._closeConfirm(); });
+
+    this._confirmModal = [overlay, panel, msg, yesBtn, noBtn];
+  }
+
+  _closeConfirm() {
+    if (!this._confirmModal) return;
+    this._confirmModal.forEach(o => o.destroy());
+    this._confirmModal = null;
   }
 
   update(_time, delta) {
