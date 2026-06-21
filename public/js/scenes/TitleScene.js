@@ -130,7 +130,10 @@ class TitleScene extends Phaser.Scene {
     btnHit.on('pointerdown', () => {
       SE.playSE('click');
       this.cameras.main.fadeOut(400, 0, 0, 0);
-      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('HomeScene'));
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        const next = GameState.player.tutorialDone ? 'HomeScene' : 'TutorialScene';
+        this.scene.start(next);
+      });
     });
 
     // ── 新しく始めるボタン ──

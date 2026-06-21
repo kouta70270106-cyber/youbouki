@@ -12,6 +12,7 @@ const GameState = {
     homeYokaiIdx: 0,
     homeYokaiIds: [],
     profileYokaiId: null,
+    tutorialDone: false,
   },
 
   // ストーリー進行
@@ -41,6 +42,7 @@ const GameState = {
     if (this.player.homeYokaiIdx === undefined) this.player.homeYokaiIdx = 0;
     if (!this.player.homeYokaiIds) this.player.homeYokaiIds = [];
     if (!('profileYokaiId' in this.player)) this.player.profileYokaiId = null;
+    if (!('tutorialDone' in this.player)) this.player.tutorialDone = true; // 既存セーブはスキップ
     return true;
   },
 
@@ -58,6 +60,7 @@ const GameState = {
       homeYokaiIdx: 0,
       homeYokaiIds: [],
       profileYokaiId: null,
+      tutorialDone: false,
     };
     this.story = { currentChapter: 1, currentBattle: 0 };
   }
