@@ -46,5 +46,19 @@ const GameState = {
 
   reset() {
     localStorage.removeItem('youbouki_save');
+    this.player = {
+      name: '',
+      level: 1,
+      unlockedCards: ['kappa','kappa','kappa','kitsune','kitsune','kitsune','zashiki','zashiki','zashiki','tanuki','tanuki','tanuki'],
+      completedChapters: [],
+      stageProgress: {},
+      clearedBattles: [],
+      jureikon: 0,
+      deck: [],
+      homeYokaiIdx: 0,
+      homeYokaiIds: [],
+      profileYokaiId: null,
+    };
+    this.story = { currentChapter: 1, currentBattle: 0 };
   }
 };
