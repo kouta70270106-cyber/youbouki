@@ -124,9 +124,10 @@ class CollectionScene extends Phaser.Scene {
       spr.setScale(scale).setAlpha(isOwned ? 1 : 0.3);
     }
 
-    // 妖怪名
+    // 妖怪名（長い名前は自動縮小）
+    const nameFontSize = card.name.length <= 6 ? '13px' : card.name.length <= 9 ? '11px' : '9px';
     t(this.add.text(x, y + 22, card.name, {
-      fontFamily: 'serif', fontSize: '13px',
+      fontFamily: 'serif', fontSize: nameFontSize,
       color: isOwned ? '#e8c87a' : '#665544',
     }).setOrigin(0.5));
 
