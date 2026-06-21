@@ -8,7 +8,7 @@ class HomeYokaiSelectScene extends Phaser.Scene {
 
     this._gridObjs  = [];
     this._page      = 0;
-    this._ownedIds  = D.cards.map(c => c.id);
+    this._ownedIds  = D.cards.filter(c => GameState.player.unlockedCards.includes(c.id)).map(c => c.id);
     this._selected  = [...(GameState.player.homeYokaiIds || [])]; // 最大5体
     this._MAX       = 5;
 
