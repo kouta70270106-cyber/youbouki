@@ -53,21 +53,22 @@ class CollectionScene extends Phaser.Scene {
     });
 
     // 開発者ボタン（localhost のみ表示）
-    if (!location.hostname.includes('localhost')) return;
-    const devBtn = this.add.text(W - 8, 8, '[DEV]', {
-      fontFamily: 'monospace', fontSize: '11px', color: '#443355',
-      backgroundColor: '#1a1a2a', padding: { x: 4, y: 2 },
-    }).setOrigin(1, 0).setScrollFactor(0).setInteractive({ useHandCursor: true });
-    devBtn.on('pointerdown', () => {
-      this._devMode = !this._devMode;
-      devBtn.setColor(this._devMode ? '#ff88ff' : '#443355');
-      this._ownedText.setText(
-        this._devMode
-          ? `全 ${D.cards.length} 種 ［DEV: 全表示中］`
-          : `所持 ${GameState.player.unlockedCards.length} / 全 ${D.cards.length} 種`
-      );
-      this._renderGrid();
-    });
+    if (location.hostname.includes('localhost')) {
+      const devBtn = this.add.text(W - 8, 8, '[DEV]', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#443355',
+        backgroundColor: '#1a1a2a', padding: { x: 4, y: 2 },
+      }).setOrigin(1, 0).setScrollFactor(0).setInteractive({ useHandCursor: true });
+      devBtn.on('pointerdown', () => {
+        this._devMode = !this._devMode;
+        devBtn.setColor(this._devMode ? '#ff88ff' : '#443355');
+        this._ownedText.setText(
+          this._devMode
+            ? `全 ${D.cards.length} 種 ［DEV: 全表示中］`
+            : `所持 ${GameState.player.unlockedCards.length} / 全 ${D.cards.length} 種`
+        );
+        this._renderGrid();
+      });
+    }
 
     // スクロール（30種 × 10行に対応）
     const rows = Math.ceil(D.cards.length / this._cols);
